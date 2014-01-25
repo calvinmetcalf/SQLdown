@@ -52,3 +52,39 @@ PostDown.prototype._get = function(key, cb) {
 		});
 	});
 }
+PostDown.prototype._put = function (key, rawvalue, cb) {
+	var value = JSON.stringify(rawvalue);
+ 	pg.connect(self.location, function(err, client, done){
+		if (err){
+			return cb(err);
+		}
+		client.query({
+			text: 'INSERT INTO postdown(key, value) VALUES($1, $2);',
+			name: "insert values"
+			values: [key, value]
+		}, function (resp, e) {
+			if(e){
+				if (e.cause.code === "23505") {
+					client.query({
+						text: 'UPDATE postdown SET value=$2 WHERE key=$1;',
+						name: "update values",
+						values: [key, value]
+					}, function(e){
+						done();
+						if(e){
+							cb(e);
+						}else{
+							cb(null, true);
+						}
+					});
+				} else {
+					done();
+					cb(e);
+				}
+			}else{
+				done();
+				cb(null, true);
+			}
+		});
+  });
+};
