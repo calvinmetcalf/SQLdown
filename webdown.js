@@ -1,6 +1,9 @@
 var util = require('util');
 var AbstractLevelDOWN = require('./').AbstractLevelDOWN;
 var pg = require('pg.js');
+
+var global = global || window || process;
+
 function openDB() {
   if (typeof global !== 'undefined') {
     if (global.navigator && global.navigator.sqlitePlugin && global.navigator.sqlitePlugin.openDatabase) {
@@ -12,30 +15,48 @@ function openDB() {
     }
   }
 }
+
+function isCordova() {
+  return (typeof global.cordova !== "undefined" ||
+    typeof global.PhoneGap !== "undefined" ||
+    typeof global.phonegap !== "undefined");
+};
+
 // constructor, passes through the 'location' argument to the AbstractLevelDOWN constructor
 function WebSQLDOWN (location) {
   AbstractLevelDOWN.call(this, location);
+}
 
+function setup(self, options, callback) {
+  this.version = options.version || 1;
+  this.size = options.size || (5 * 1024 * 1024);
+  this.db = openDatabase(self.location, self.vesion, self.location, self.size);
+  if(!self.db){
+    return callback(true);
+  }
+  self.db.transaction(function (tx) {
+    tx.executeSql('CREATE TABLE IF NOT EXISTS webdown (key text PRIMARY KEY, value);', function(tx,msg){
+      callback(null,msg);
+    },function(tx,err){
+      callback(err);
+    });
+  });
 }
 
 // our new prototype inherits from AbstractLevelDOWN
 util.inherits(WebSQLDOWN, AbstractLevelDOWN);
 
 WebSQLDOWN.prototype._open = function (options, callback) {
-	var self = this;
-	this.version = options.version || 1;
-	this.size = options.size || (5 * 1024 * 1024);
-	this.db = openDatabase(this.location, this.vesion, this.location, this.size);
-	if(!this.db){
-		return callback(true);
-	}
-	this.db.transaction(function (tx) {
-		 tx.executeSql('CREATE TABLE IF NOT EXISTS webdown (key text PRIMARY KEY, value);', function(tx,msg){
-		 		callback(null,msg);
-		 },function(tx,err){
-		 	callback(err);
-		 });
-	});
+  var self = this;
+
+  if (isCordova()) {
+    setup(self, options, callback);
+  } else {
+    // wait for cordova's special deviceready event
+    global.document.addEventListener('deviceready', function () {
+      setup(self, options, callback);
+    }, false);
+  }
 };
 
 WebSQLDOWN.prototype._get = function(key, opt, cb) {
