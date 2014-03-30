@@ -12,9 +12,10 @@
     "leveldown",
     "levelup"
   ],
-  "main": "./webdown.js",
+  "main": "./index.js",
   "dependencies": {
-    "abstract-leveldown": "~0.11.3"
+    "abstract-leveldown": "~0.11.3",
+    "sqlite3": "^2.2.0"
   },
   "devDependencies": {
     "tap": "*",
