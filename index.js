@@ -1,7 +1,7 @@
-var util = require('util');
-var sqlite3 = reqiure('sqlite3');
+var inherits = require('utils').inherits;
+var sqlite3 = require('sqlite3');
 var AbstractLevelDOWN = require('abstract-leveldown').AbstractLevelDOWN;
-
+module.exports = SQLdown;
 // constructor, passes through the 'location' argument to the AbstractLevelDOWN constructor
 function SQLdown (location) {
   AbstractLevelDOWN.call(this, location);
@@ -12,7 +12,7 @@ var GET = 'SELECT value FROM sqldown WHERE key=?';
 var PUT = 'INSERT OR REPLACE INTO sqldown(key, value) VALUES(?, ?);';
 var DEL = 'DELETE FROM sqldown WHERE key=?';
 // our new prototype inherits from AbstractLevelDOWN
-util.inherits(SQLdown, AbstractLevelDOWN);
+inherits(SQLdown, AbstractLevelDOWN);
 
 SQLdown.prototype._open = function (options, callback) {
   var self = this;
@@ -50,4 +50,7 @@ SQLdown.prototype._put = function (key, rawvalue, opt, cb) {
 SQLdown.prototype._del = function (key, rawvalue, opt, cb) {
   this.delStatement.run([key], cb);
 };
-module.exports = SQLdown;
+
+SQLdown.prototype._close = function (callback) {
+  this.db.close(callback);
+}
