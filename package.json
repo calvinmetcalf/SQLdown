@@ -1,16 +1,17 @@
 {
-  "name": "webdown",
-  "description": "A websql implementation of the LevelDOWN API",
-  "version": "0.0.0",
+  "name": "sqldown",
+  "description": "A sqlite3 implementation of the LevelDOWN API",
+  "version": "0.0.1",
   "repository": {
     "type": "git",
-    "url": "https://github.com//calvinmetcalf/webdown.git"
+    "url": "https://github.com//calvinmetcalf/sqldown.git"
   },
-  "homepage": "https://github.com/calvinmetcalf/webdown",
+  "homepage": "https://github.com/calvinmetcalf/sqldown",
   "keywords": [
     "leveldb",
     "leveldown",
-    "levelup"
+    "levelup",
+    "sqlite"
   ],
   "main": "./index.js",
   "dependencies": {
