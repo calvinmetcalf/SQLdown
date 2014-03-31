@@ -16,8 +16,8 @@ var dbidx = 0
       }
       
       function destroy() {
-        var f = list.pop()
         if (list.length === 0) return callback()
+        var f = list.pop()
         leveljs.destroy(f, destroy)
       }
       

@@ -18,17 +18,10 @@
     "sqlite3": "^2.2.0"
   },
   "devDependencies": {
-    "tap": "*",
-    "sinon": "*",
-    "rimraf": "*",
-    "browserify": "~3.24.1"
-  },
-  "browser": {
-    "rimraf": false
+    "tape": "^2.12.1"
   },
   "scripts": {
-    "test": "node ./test.js",
-    "build": "browserify -o bundle.js -s WebDown ./webdown"
+    "test": "node ./test/test.js"
   },
   "license": "MIT"
 }

@@ -1,4 +1,4 @@
-webdown
+SQLdown
 ====
 
-soon to be a levelup backend with ~~postgres~~ websql
+A levelup backend with ~~postgres~~ ~~websql~~ sqlite, curently non batch stuff works, test setup taken from [level-js](https://github.com/maxogden/level.js)
