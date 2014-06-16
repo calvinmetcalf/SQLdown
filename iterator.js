@@ -65,18 +65,9 @@ Iterator.prototype._next = function (callback) {
       callback();
     });
   }
-  var offset = this._count++;
-  var sql = this._sql;
-  if (offset) {
-    sql += ' OFFSET ';
-    sql += offset;
-  }
-  sql += ';';
-  
-  this.db.db.get(sql, function (err, resp) {
+  this.params[this.params.length - 1] = this._count++;
+  this.db.db.get(this._sql, this.params, function (err, resp) {
     if (err) {
-      console.log(err);
-      console.log(sql);
       return callback(err);
     }
     if (!resp || this._ended) {
@@ -103,6 +94,7 @@ Iterator.prototype._next = function (callback) {
 Iterator.prototype.buildSQL = function () {
   var sql = GET;
   var order;
+  this.params = [];
   if (this._order)  {
     order = ' ORDER BY key ';
     if ('start' in this._options) {
@@ -138,21 +130,27 @@ Iterator.prototype.buildSQL = function () {
   }
   var queries = [];
   if ('lt' in this._options) {
-    queries.push('key < ' + format(this._options.lt));
+    queries.push('key < ?');
+    this.params.push(this._options.lt);
   }
   if ('lte' in this._options) {
-    queries.push('key <= ' + format(this._options.lte));
+    queries.push('key <= ?');
+    this.params.push(this._options.lte);
   }
   if ('gt' in this._options) {
-    queries.push('key > ' + format(this._options.gt));
+    queries.push('key > ?');
+    this.params.push(this._options.gt);
   }
   if ('gte' in this._options) {
-    queries.push('key >= ' + format(this._options.gte));
+    queries.push('key >= ?');
+    this.params.push(this._options.gte);
   }
   if (queries.length) {
     sql += ' WHERE ' + queries.join(' AND ');
   }
   sql += order;
   sql += limitStuff;
+  sql += ' OFFSET ?;';
+  this.params.push(-1);
   return sql;
 };
