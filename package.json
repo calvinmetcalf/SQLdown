@@ -19,10 +19,13 @@
     "sqlite3": "^2.2.0"
   },
   "devDependencies": {
+    "pouchdb": "git://github.com/pouchdb/pouchdb#2415",
+    "pouchdb-server": "0.4.0",
     "tape": "^2.12.1"
   },
   "scripts": {
-    "test": "node ./test/test.js"
+    "test": "node ./test/test.js",
+    "test-pouchdb": "./bin/test-pouchdb.sh"
   },
   "license": "MIT"
 }
