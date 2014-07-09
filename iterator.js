@@ -65,21 +65,14 @@ Iterator.prototype._next = function (callback) {
       callback();
     });
   }
-  this._sql.clone().offset(this._count++).exec(function (err, resp) {
-    if (err) {
-      return callback(err);
-    }
+  this._sql.clone().offset(this._count++).then(function (resp) {
     if (!resp.length || self._ended) {
       return callback();
     }
     resp = resp[0];
     var key = resp.key;
-    var value;
-    try {
-      value = JSON.parse(resp.value);
-    } catch (e) {
-      return callback(e);
-    }
+    var value = JSON.parse(resp.value);
+
     if (self._keyAsBuffer) {
       key = new Buffer(key);
     }
@@ -89,7 +82,7 @@ Iterator.prototype._next = function (callback) {
       value = String(value);
     }
     callback(null, key, value);
-  });
+  }).catch(callback);
 };
 Iterator.prototype.buildSQL = function () {
   var sql = this.db.db.select('key', 'value').from('sqldown');
