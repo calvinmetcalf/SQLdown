@@ -1,9 +1,10 @@
 'use strict';
-var inherits = require('util').inherits;
-var sqlite3 = require('sqlite3');
+var inherits = require('inherits');
+var knex = require('knex');
 var AbstractLevelDOWN = require('abstract-leveldown').AbstractLevelDOWN;
-var SQLinter = require('./iterator');
+var Iter = require('./iterator');
 var fs = require('fs');
+var Promise = require('bluebird');
 module.exports = SQLdown;
 // constructor, passes through the 'location' argument to the AbstractLevelDOWN constructor
 function SQLdown(location) {
@@ -15,6 +16,8 @@ function SQLdown(location) {
 SQLdown.destroy = function (location, callback) {
   fs.unlink(location, callback);
 };
+
+var TABLENAME = 'sqldown';
 var CREATE = 'CREATE TABLE IF NOT EXISTS sqldown (key text PRIMARY KEY, value);';
 var GET = 'SELECT value FROM sqldown WHERE key=?';
 var PUT = 'INSERT OR REPLACE INTO sqldown(key, value) VALUES(?, ?);';
@@ -24,20 +27,21 @@ inherits(SQLdown, AbstractLevelDOWN);
 
 SQLdown.prototype._open = function (options, callback) {
   var self = this;
-  this.db = new sqlite3.Database(this.location, function (err) {
-    if (err) {
-      return callback(err);
-    }
-    self.db.run(CREATE, function (err) {
-      if (err) {
-        return callback(err);
+  this.db = knex({
+    client: 'sqlite3',
+    connection: {
+      filename: this.location
+    }});
+  this.db.schema.hasTable(TABLENAME).then(function (exists) {
+      if (!exists) {
+        return self.db.schema.createTable(TABLENAME, function (table) {
+          //table.increments('id').primary();
+          table.text('key').primary();
+          table.text('value');
+        });
       }
-      // self.getStatement = self.db.prepare(GET);
-      // self.putStatement = self.db.prepare(PUT);
-      // self.delStatement = self.db.prepare(DEL);
-      callback();
-    });
-  });
+    })
+    .nodeify(callback);
 };
 
 SQLdown.prototype._get = function (key, options, cb) {
@@ -48,12 +52,17 @@ SQLdown.prototype._get = function (key, options, cb) {
   if (options.raw) {
     asBuffer = false;
   }
-  this.db.get(GET, [key], function (err, res) {
+  this.db.select('value').from(TABLENAME).where({
+    key:key
+  }).exec(function (err, res) {
     if (err) {
-      return cb(err);
+      return cb(err.stack);
+    }
+    if (!res.length) {
+      return cb(new Error('NotFound'));
     }
     try {
-      var value = JSON.parse(res.value);
+      var value = JSON.parse(res[0].value);
       if (asBuffer) {
         value = new Buffer(value);
       }
@@ -65,42 +74,27 @@ SQLdown.prototype._get = function (key, options, cb) {
 };
 SQLdown.prototype._put = function (key, rawvalue, opt, cb) {
 	var value = JSON.stringify(rawvalue);
-  this.db.run(PUT, [key, value], cb);
+  this.db.raw(PUT, [key, value]).exec(cb);
 };
 SQLdown.prototype._del = function (key, opt, cb) {
-  this.db.run(DEL, [key], cb);
+  this.db(TABLENAME).where({key: key}).delete().exec(cb);
 };
 SQLdown.prototype._batch = function (array, options, callback) {
   var self = this;
-  this.db.serialize(function () {
-    self.db.run('BEGIN TRANSACTION');
-    var i = -1;
-    var len = array.length;
-    var item, value, key, type;
-
-    function errCallback(err) {
-      if (err) {
-        callback(err);
-      }
-    }
-    while (++i < len) {
-      item = array[i];
-      key = item.key;
-      type = item.type || 'put';
-      if (type === 'put') {
-        value = JSON.stringify(item.value);
-        self.db.run(PUT, [key, value], errCallback);
+  this.db.transaction(function (trx) {
+    return Promise.all(array.map(function (item) {
+      if (item.type === 'del') {
+        return self.db(TABLENAME).transacting(trx).where({key: item.key}).delete();
       } else {
-        self.db.run(DEL, [key], errCallback);
+        return trx.raw(PUT, [item.key, JSON.stringify(item.value)]);
       }
-    }
-    self.db.run('COMMIT TRANSACTION', callback);
-  });
+    }));
+  }).nodeify(callback);
 };
 SQLdown.prototype._close = function (callback) {
-  this.db.close(callback);
+  this.db.destroy().exec(callback);
 };
 
 SQLdown.prototype.iterator = function (options) {
-  return new SQLinter(this, options);
+  return new Iter(this, options);
 };

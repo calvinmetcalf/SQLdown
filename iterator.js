@@ -66,13 +66,14 @@ Iterator.prototype._next = function (callback) {
     });
   }
   this.params[this.params.length - 1] = this._count++;
-  this.db.db.get(this._sql, this.params, function (err, resp) {
+  this.db.db.raw(this._sql, this.params).exec(function (err, resp) {
     if (err) {
       return callback(err);
     }
-    if (!resp || this._ended) {
+    if (!resp.length || self._ended) {
       return callback();
     }
+    resp = resp[0];
     var key = resp.key;
     var value;
     try {
