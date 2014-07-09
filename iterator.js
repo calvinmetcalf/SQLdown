@@ -65,8 +65,7 @@ Iterator.prototype._next = function (callback) {
       callback();
     });
   }
-  this.params[this.params.length - 1] = this._count++;
-  this.db.db.raw(this._sql, this.params).exec(function (err, resp) {
+  this._sql.clone().offset(this._count++).exec(function (err, resp) {
     if (err) {
       return callback(err);
     }
@@ -93,11 +92,11 @@ Iterator.prototype._next = function (callback) {
   });
 };
 Iterator.prototype.buildSQL = function () {
-  var sql = GET;
+  var sql = this.db.db.select('key', 'value').from('sqldown');
   var order;
   this.params = [];
   if (this._order)  {
-    order = ' ORDER BY key ';
+    sql.orderBy('key');
     if ('start' in this._options) {
       if (this._options.exclusiveStart) {
         if ('start' in this._options) {
@@ -113,7 +112,7 @@ Iterator.prototype.buildSQL = function () {
       this._options.lte = this._options.end;
     }
   } else {
-    order = ' ORDER BY key DESC ';
+    sql.orderBy('key', 'DESC');
     if ('start' in this._options) {
       if (this._options.exclusiveStart) {
         if ('start' in this._options) {
@@ -129,29 +128,19 @@ Iterator.prototype.buildSQL = function () {
       this._options.gte = this._options.end;
     }
   }
-  var queries = [];
+
   if ('lt' in this._options) {
-    queries.push('key < ?');
-    this.params.push(this._options.lt);
+    sql.where('key','<', this._options.lt);
   }
   if ('lte' in this._options) {
-    queries.push('key <= ?');
-    this.params.push(this._options.lte);
+    sql.where('key','<=', this._options.lte);
   }
   if ('gt' in this._options) {
-    queries.push('key > ?');
-    this.params.push(this._options.gt);
+    sql.where('key','>', this._options.gt);
   }
   if ('gte' in this._options) {
-    queries.push('key >= ?');
-    this.params.push(this._options.gte);
+    sql.where('key','>=', this._options.gte);
   }
-  if (queries.length) {
-    sql += ' WHERE ' + queries.join(' AND ');
-  }
-  sql += order;
-  sql += limitStuff;
-  sql += ' OFFSET ?;';
-  this.params.push(-1);
+  sql.limit(1);
   return sql;
 };
