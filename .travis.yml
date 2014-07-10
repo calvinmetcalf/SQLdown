@@ -9,6 +9,9 @@ before_script:
   - sh -c "if [ '$DB' = 'mysql' ]; then mysql -e 'create database IF NOT EXISTS sqldown;'; fi"
 
 env:
-  - DB=sqlite
-  - DB=mysql
-  - DB=postgres
+  - COMMAND=test
+  - DB=mysql COMMAND=test
+  - DB=postgres COMMAND=test
+  - COMMAND=browser
+
+script: npm run $COMMAND

@@ -19,7 +19,7 @@
     "bluebird": "^2.2.1",
     "double-ended-queue": "^2.0.0-0",
     "through2": "^0.5.1",
-    "knex": "^0.6.22",
+    "knex": "calvinmetcalf/knex#browserfiable",
     "abstract-leveldown": "^0.12.3"
   },
   "devDependencies": {
@@ -28,10 +28,17 @@
     "sqlite3": "^2.2.3",
     "pg-query-stream": "^0.6.0",
     "pg": "^3.3.0",
-    "mysql": "^2.3.2"
+    "mysql": "^2.3.2",
+    "browserify": "^4.2.0",
+    "testling": "^1.7.0"
   },
+  "testling": {},
   "scripts": {
-    "test": "node ./test/test.js | tspec"
+    "test": "node ./test/test.js | tspec",
+    "browser": "browserify ./test/test.js | testling | tspec"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "browser": {
+    "fs": false
+  }
 }

@@ -9,6 +9,11 @@ var url = require('url');
 var TABLENAME = 'sqldown';
 module.exports = SQLdown;
 function parseConnectionString(string) {
+  if (process.browser) {
+    return {
+      client: 'websql'
+    };
+  }
   var parsed = url.parse(string);
   var protocol = parsed.protocol;
   if(protocol === null) {
@@ -28,6 +33,9 @@ function parseConnectionString(string) {
   };
 }
 function getTableName (location, options) {
+  if (process.browser) {
+    return location;
+  }
   var parsed = url.parse(location, true).query;
   return parsed.table || options.table || TABLENAME;
 }
@@ -39,7 +47,6 @@ function SQLdown(location) {
   AbstractLevelDOWN.call(this, location);
 }
 SQLdown.destroy = function (location, options, callback) {
-  //fs.unlink(location, callback);
   if (typeof options === 'function') {
     callback = options;
     options = {};

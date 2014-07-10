@@ -20,8 +20,8 @@ function test(testCommon) {
 }
 if (process.env.DB === 'postgres') {
   test(testCommon('postgres://localhost/sqldown?table=_leveldown_test_db_'));
-} else if (process.env.DB === 'sqlite') {
-    test(testCommon('_leveldown_test_db_'));
-}else if (process.env.DB === 'mysql') {
+}  else if (process.env.DB === 'mysql') {
     test(testCommon('mysql://travis:@localhost/sqldown?table=_leveldown_test_db_'));
+} else {
+    test(testCommon('_leveldown_test_db_'));
 }
