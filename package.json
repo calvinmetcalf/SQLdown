@@ -15,17 +15,19 @@
   ],
   "main": "./index.js",
   "dependencies": {
-    "abstract-leveldown": "~0.11.3",
     "inherits": "^2.0.1",
-    "knex": "^0.6.21",
     "bluebird": "^2.2.1",
     "double-ended-queue": "^2.0.0-0",
     "through2": "^0.5.1",
-    "sqlite3": "^2.2.3"
+    "knex": "^0.6.22",
+    "abstract-leveldown": "^0.12.3"
   },
   "devDependencies": {
     "tape": "^2.12.1",
-    "tap-spec": "^0.2.0"
+    "tap-spec": "^0.2.0",
+    "sqlite3": "^2.2.3",
+    "pg-query-stream": "^0.6.0",
+    "pg": "^3.3.0"
   },
   "scripts": {
     "test": "node ./test/test.js | tspec"

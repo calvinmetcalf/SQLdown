@@ -5,7 +5,32 @@ var AbstractLevelDOWN = require('abstract-leveldown').AbstractLevelDOWN;
 var Iter = require('./iterator');
 var fs = require('fs');
 var Promise = require('bluebird');
+var url = require('url');
+var TABLENAME = 'sqldown';
 module.exports = SQLdown;
+function parseConnectionString(string) {
+  var parsed = url.parse(string);
+  var protocol = parsed.protocol;
+  if(protocol === null) {
+    return {
+      client:'sqlite3',
+      connection: {
+        filename: string
+      }
+    };
+  }
+  if (protocol.slice(-1) === ':') {
+    protocol = protocol.slice(0, -1);
+  }
+  return {
+    client: protocol,
+    connection: string
+  };
+}
+function getTableName (location, options) {
+  var parsed = url.parse(location, true).query;
+  return parsed.table || options.table || TABLENAME;
+}
 // constructor, passes through the 'location' argument to the AbstractLevelDOWN constructor
 function SQLdown(location) {
   if (!(this instanceof SQLdown)) {
@@ -13,23 +38,29 @@ function SQLdown(location) {
   }
   AbstractLevelDOWN.call(this, location);
 }
-SQLdown.destroy = function (location, callback) {
-  fs.unlink(location, callback);
+SQLdown.destroy = function (location, options, callback) {
+  //fs.unlink(location, callback);
+  if (typeof options === 'function') {
+    callback = options;
+    options = {};
+  }
+  var conn = parseConnectionString(location);
+  if (conn.client === 'sqlite3') {
+    fs.unlink(location, callback);
+    return;
+  }
+  var db = knex(conn);
+  db.schema.dropTableIfExists(getTableName(location, options)).then(function () {
+    return db.destroy();
+  }).exec(callback);
 };
-
-var TABLENAME = 'sqldown';
 // our new prototype inherits from AbstractLevelDOWN
 inherits(SQLdown, AbstractLevelDOWN);
 
 SQLdown.prototype._open = function (options, callback) {
   var self = this;
-  this.db = knex({
-    client: options.client || 'sqlite3',
-    connection: {
-      filename: this.location
-    }
-  });
-  this.tablename = options.tablename || TABLENAME;
+  this.db = knex(parseConnectionString(this.location));
+  this.tablename = getTableName(this.location, options);
   this.db.schema.hasTable(this.tablename).then(function (exists) {
       if (!exists) {
         return self.db.schema.createTable(self.tablename, function (table) {
