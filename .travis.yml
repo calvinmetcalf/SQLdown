@@ -12,6 +12,7 @@ env:
   - COMMAND=test
   - DB=mysql COMMAND=test
   - DB=postgres COMMAND=test
+  - COMMAND=browser
 
 allow_failures:
   - env: COMMAND=browser
