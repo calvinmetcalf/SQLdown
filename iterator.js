@@ -1,15 +1,7 @@
 'use strict';
 var inherits = require('util').inherits;
 var AbstractIterator = require('abstract-leveldown/abstract-iterator');
-var GET = 'SELECT key, value FROM sqldown';
-var limitStuff = 'LIMIT 1';
-function format(inStr) {
-  if (typeof inStr === 'number') {
-    return inStr;
-  } else {
-    return '\'' + inStr + '\'';
-  }
-}
+var IterStream = require('./iter-stream');
 function goodOptions(opts, name) {
   if (!(name in opts)) {
     return;
@@ -38,6 +30,7 @@ var names = [
 ];
 function Iterator(db, options) {
   AbstractIterator.call(this, db);
+  this._db = db.db;
   options = options || {};
   this._order = !options.reverse;
   this._options = options;
@@ -47,6 +40,9 @@ function Iterator(db, options) {
   this._count = 0;
   this._limit = options.limit || -1;
   this._sql = this.buildSQL();
+  if (this._limit > 0) {
+    this._sql.limit(this._limit);
+  }
   if ('keyAsBuffer' in options) {
     this._keyAsBuffer = options.keyAsBuffer;
   } else {
@@ -57,19 +53,17 @@ function Iterator(db, options) {
   } else {
     this._valueAsBuffer = true;
   }
+  this._sql = new IterStream(this._sql.stream());
 }
 Iterator.prototype._next = function (callback) {
   var self = this;
-  if (this._limit > -1 && this._count >= this._limit) {
-    return process.nextTick(function () {
-      callback();
-    });
+  if (self._ended) {
+    callback();
   }
-  this._sql.clone().offset(this._count++).then(function (resp) {
-    if (!resp.length || self._ended) {
+  this._sql.next(function (err, resp) {
+    if (err) {
       return callback();
     }
-    resp = resp[0];
     var key = resp.key;
     var value = JSON.parse(resp.value);
 
@@ -82,14 +76,15 @@ Iterator.prototype._next = function (callback) {
       value = String(value);
     }
     callback(null, key, value);
-  }).catch(callback);
+  });
 };
+
 Iterator.prototype.buildSQL = function () {
-  var sql = this.db.db.select('key', 'value').from('sqldown');
-  var order;
-  this.params = [];
+  var self = this;
+  var outersql = this._db.select('key', 'value').from(this.db.tablename);
+  var innerSQL = this._db.max('id').from(self.db.tablename).groupBy('key');
   if (this._order)  {
-    sql.orderBy('key');
+    outersql.orderBy('key');
     if ('start' in this._options) {
       if (this._options.exclusiveStart) {
         if ('start' in this._options) {
@@ -105,7 +100,7 @@ Iterator.prototype.buildSQL = function () {
       this._options.lte = this._options.end;
     }
   } else {
-    sql.orderBy('key', 'DESC');
+    outersql.orderBy('key', 'DESC');
     if ('start' in this._options) {
       if (this._options.exclusiveStart) {
         if ('start' in this._options) {
@@ -123,17 +118,16 @@ Iterator.prototype.buildSQL = function () {
   }
 
   if ('lt' in this._options) {
-    sql.where('key','<', this._options.lt);
+    innerSQL.where('key','<', this._options.lt);
   }
   if ('lte' in this._options) {
-    sql.where('key','<=', this._options.lte);
+    innerSQL.where('key','<=', this._options.lte);
   }
   if ('gt' in this._options) {
-    sql.where('key','>', this._options.gt);
+    innerSQL.where('key','>', this._options.gt);
   }
   if ('gte' in this._options) {
-    sql.where('key','>=', this._options.gte);
+    innerSQL.where('key','>=', this._options.gte);
   }
-  sql.limit(1);
-  return sql;
+  return outersql.whereIn('id', innerSQL);
 };
