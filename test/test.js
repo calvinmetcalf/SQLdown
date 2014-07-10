@@ -18,5 +18,8 @@ function test(testCommon) {
   require('abstract-leveldown/abstract/iterator-test').all(leveljs, tape, testCommon)
   require('abstract-leveldown/abstract/ranges-test').all(leveljs, tape, testCommon)
 }
-test(testCommon('postgres://localhost/sqldown?table=_leveldown_test_db_'));
-test(testCommon('_leveldown_test_db_'));
+if (process.env.db === 'postgres') {
+  test(testCommon('postgres://localhost/sqldown?table=_leveldown_test_db_'));
+} else if (process.env.db === 'sqlite') {
+    test(testCommon('_leveldown_test_db_'));
+}
