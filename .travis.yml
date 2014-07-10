@@ -14,7 +14,8 @@ env:
   - DB=postgres COMMAND=test
   - COMMAND=browser
 
-allow_failures:
+matrix:
+  allow_failures:
   - env: COMMAND=browser
 
 script: npm run $COMMAND
