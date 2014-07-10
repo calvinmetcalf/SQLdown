@@ -29,13 +29,11 @@
     "pg-query-stream": "^0.6.0",
     "pg": "^3.3.0",
     "mysql": "^2.3.2",
-    "browserify": "^4.2.0",
-    "testling": "^1.7.0"
+    "browserify": "^4.2.0"
   },
-  "testling": {},
   "scripts": {
     "test": "node ./test/test.js | tspec",
-    "browser": "browserify ./test/test.js | testling | tspec"
+    "browser": "browserify ./test/test.js > temp.js && phantomjs ./temp.js | tspec"
   },
   "license": "MIT",
   "browser": {
