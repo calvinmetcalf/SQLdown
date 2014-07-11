@@ -110,6 +110,9 @@ SQLdown.prototype._get = function (key, options, cb) {
   });
 };
 SQLdown.prototype._put = function (key, rawvalue, opt, cb) {
+  if (!this._isBuffer(rawvalue) && process.browser  && typeof rawvalue !== 'object') {
+    rawvalue = String(rawvalue)
+  }
 	var value = JSON.stringify(rawvalue);
   this.db(this.tablename).insert({
     key: key,

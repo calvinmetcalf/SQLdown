@@ -19,8 +19,8 @@
     "bluebird": "^2.2.1",
     "double-ended-queue": "^2.0.0-0",
     "through2": "^0.5.1",
-    "knex": "calvinmetcalf/knex#browserfiable",
-    "abstract-leveldown": "^0.12.3"
+    "abstract-leveldown": "^0.12.3",
+    "knex": "tgriesser/knex"
   },
   "devDependencies": {
     "tape": "^2.12.1",
@@ -33,7 +33,7 @@
   },
   "scripts": {
     "test": "node ./test/test.js | tspec",
-    "browser": "browserify ./test/test.js > temp.js && phantomjs ./temp.js | tspec"
+    "browser": "browserify ./test/testBrowser.js > temp.js && phantomjs ./temp.js | tspec"
   },
   "license": "MIT",
   "browser": {
