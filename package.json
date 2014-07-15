@@ -32,11 +32,17 @@
     "browserify": "^4.2.0"
   },
   "scripts": {
-    "test": "node ./test/test.js | tspec",
-    "browser": "browserify ./test/testBrowser.js > temp.js && phantomjs ./temp.js | tspec"
+    "test": "node ./test/test.js | tspec"
   },
   "license": "MIT",
   "browser": {
     "fs": false
+  },
+  "testling": {
+    "files": "test/test.js",
+    "browsers": [
+      "chrome/25..latest",
+      "safari/6.0..latest"
+    ]
   }
 }

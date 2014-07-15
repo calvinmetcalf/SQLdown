@@ -12,10 +12,5 @@ env:
   - COMMAND=test
   - DB=mysql COMMAND=test
   - DB=postgres COMMAND=test
-  - COMMAND=browser
-
-matrix:
-  allow_failures:
-  - env: COMMAND=browser
 
 script: npm run $COMMAND
