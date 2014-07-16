@@ -40,11 +40,15 @@ function getTableName (location, options) {
   return parsed.table || options.table || TABLENAME;
 }
 // constructor, passes through the 'location' argument to the AbstractLevelDOWN constructor
+// our new prototype inherits from AbstractLevelDOWN
+inherits(SQLdown, AbstractLevelDOWN);
+
 function SQLdown(location) {
   if (!(this instanceof SQLdown)) {
     return new SQLdown(location);
   }
   AbstractLevelDOWN.call(this, location);
+  this.db = this.counter = this.compactFreq = this.tablename = void 0;
 }
 SQLdown.destroy = function (location, options, callback) {
   if (typeof options === 'function') {
@@ -61,13 +65,14 @@ SQLdown.destroy = function (location, options, callback) {
     return db.destroy();
   }).exec(callback);
 };
-// our new prototype inherits from AbstractLevelDOWN
-inherits(SQLdown, AbstractLevelDOWN);
+
 
 SQLdown.prototype._open = function (options, callback) {
   var self = this;
   this.db = knex(parseConnectionString(this.location));
   this.tablename = getTableName(this.location, options);
+  this.compactFreq = options.compactFrequency || 5;
+  this.counter = 0;
   this.db.schema.hasTable(this.tablename).then(function (exists) {
       if (!exists) {
         return self.db.schema.createTable(self.tablename, function (table) {
@@ -110,14 +115,17 @@ SQLdown.prototype._get = function (key, options, cb) {
   });
 };
 SQLdown.prototype._put = function (key, rawvalue, opt, cb) {
+  var self = this;
   if (!this._isBuffer(rawvalue) && process.browser  && typeof rawvalue !== 'object') {
-    rawvalue = String(rawvalue)
+    rawvalue = String(rawvalue);
   }
 	var value = JSON.stringify(rawvalue);
   this.db(this.tablename).insert({
     key: key,
     value:value
-  }).exec(cb);
+  }).then(function () {
+    return self.maybeCompact();
+  }).nodeify(cb);
 };
 SQLdown.prototype._del = function (key, opt, cb) {
   this.db(this.tablename).where({key: key}).delete().exec(cb);
@@ -135,10 +143,32 @@ SQLdown.prototype._batch = function (array, options, callback) {
         }).into(self.tablename);
       }
     }));
+  }).then(function () {
+    return self.maybeCompact();
   }).nodeify(callback);
 };
+SQLdown.prototype.compact = function () {
+  var self = this;
+  return this.db(this.tablename).not.whereIn('id', function (){
+    this.max('id').from(self.tablename).groupBy('key');
+  }).delete();
+};
+SQLdown.prototype.maybeCompact = function () {
+  this.counter++;
+  this.counter %= this.compactFreq;
+  if (this.counter) {
+    console.log('not compacting');
+    return Promise.resolve();
+  } else {
+    console.log('compacting');
+    return this.compact();
+  }
+};
 SQLdown.prototype._close = function (callback) {
-  this.db.destroy().exec(callback);
+  var self = this;
+  process.nextTick(function () {
+    self.db.destroy().exec(callback);
+  });
 };
 
 SQLdown.prototype.iterator = function (options) {
