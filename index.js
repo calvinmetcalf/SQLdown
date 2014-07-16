@@ -76,9 +76,9 @@ SQLdown.prototype._open = function (options, callback) {
   this.db.schema.hasTable(this.tablename).then(function (exists) {
       if (!exists) {
         return self.db.schema.createTable(self.tablename, function (table) {
-          table.increments('id').primary();
-          table.text('key');
-          table.text('value');
+          table.increments('id').primary().index();
+          table.text('key').index();
+          table.text('value').index();
         });
       }
     })
