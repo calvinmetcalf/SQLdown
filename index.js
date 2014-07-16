@@ -73,7 +73,7 @@ SQLdown.prototype._open = function (options, callback) {
   this.dbType = conn.client;
   this.db = knex(conn);
   this.tablename = getTableName(this.location, options);
-  this.compactFreq = options.compactFrequency || 5;
+  this.compactFreq = options.compactFrequency || 25;
   this.counter = 0;
   this.db.schema.hasTable(this.tablename).then(function (exists) {
       if (!exists) {
@@ -122,6 +122,7 @@ SQLdown.prototype._get = function (key, options, cb) {
   });
 };
 SQLdown.prototype._put = function (key, rawvalue, opt, cb) {
+  var self = this;
   if (!this._isBuffer(rawvalue) && process.browser  && typeof rawvalue !== 'object') {
     rawvalue = String(rawvalue);
   }
@@ -129,26 +130,56 @@ SQLdown.prototype._put = function (key, rawvalue, opt, cb) {
   this.db(this.tablename).insert({
     key: key,
     value:value
-  }).exec(cb);
+  }).then(function () {
+    return self.maybeCompact();
+  }).nodeify(cb);
 };
 SQLdown.prototype._del = function (key, opt, cb) {
   this.db(this.tablename).where({key: key}).delete().exec(cb);
 };
 SQLdown.prototype._batch = function (array, options, callback) {
   var self = this;
+  var inserts = 0;
   this.db.transaction(function (trx) {
     return Promise.all(array.map(function (item) {
       if (item.type === 'del') {
         return trx.where({key: item.key}).from(self.tablename).delete();
       } else {
+        inserts++;
         return trx.insert({
           key: item.key,
           value:JSON.stringify(item.value)
         }).into(self.tablename);
       }
     }));
+  }).then(function () {
+    return self.maybeCompact(inserts);
   }).nodeify(callback);
 };
+SQLdown.prototype.compact = function () {
+  var self = this;
+  return this.db(this.tablename).select('key','value').not.whereIn('id', function () {
+    this.select('id').from(function () {
+      this.select(self.db.raw('max(id) as id')).from(self.tablename).groupBy('key').as('__tmp__table');
+    });
+  }).delete();
+};
+
+SQLdown.prototype.maybeCompact = function (inserts) {
+  if (inserts + this.counter > this.compactFreq) {
+    this.counter += inserts;
+    this.counter %= this.compactFreq;
+    return this.compact();
+  }
+  this.counter++;
+  this.counter %= this.compactFreq;
+  if (this.counter) {
+    return Promise.resolve();
+  } else {
+    return this.compact();
+  }
+};
+
 SQLdown.prototype._close = function (callback) {
   var self = this;
   process.nextTick(function () {
