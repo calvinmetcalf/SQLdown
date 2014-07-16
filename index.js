@@ -148,10 +148,8 @@ SQLdown.prototype._batch = function (array, options, callback) {
   }).nodeify(callback);
 };
 SQLdown.prototype.compact = function () {
-  var sub = this.db.max('id').from(this.tablename).as('temp1').groupBy('key');
-  return this.db(this.tablename).not.whereIn('id', function () {
-    this.select('id').from(sub);
-  }).delete();
+  var sub = this.db.max('id').from(this.tablename).groupBy('key');
+  return this.db(this.tablename).not.whereIn('id', sub).delete();
 };
 SQLdown.prototype.maybeCompact = function () {
   this.counter++;
