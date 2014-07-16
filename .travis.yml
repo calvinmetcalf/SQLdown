@@ -5,8 +5,9 @@ node_js:
 
 before_script:
   - sh -c "if [ '$DB' = 'postgres' ]; then psql -c 'DROP DATABASE IF EXISTS sqldown;' -U postgres; fi"
+  - sh -c "if [ '$DB' = 'mysql' ]; then mysql -c 'DROP DATABASE IF EXISTS sqldown;' fi"
   - sh -c "if [ '$DB' = 'postgres' ]; then psql -c 'create database sqldown;' -U postgres; fi"
-  - sh -c "if [ '$DB' = 'mysql' ]; then mysql -e 'create database IF NOT EXISTS sqldown;'; fi"
+  - sh -c "if [ '$DB' = 'mysql' ]; then mysql -e 'create database sqldown;'; fi"
 
 env:
   - COMMAND=test
