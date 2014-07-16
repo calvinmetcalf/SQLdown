@@ -148,19 +148,15 @@ SQLdown.prototype._batch = function (array, options, callback) {
   }).nodeify(callback);
 };
 SQLdown.prototype.compact = function () {
-  var self = this;
-  return this.db(this.tablename).not.whereIn('id', function (){
-    this.max('id').from(self.tablename).groupBy('key');
-  }).delete();
+  var sub = this.db.max('id').from(this.tablename).groupBy('key');
+  return this.db(this.tablename).not.whereIn('id', sub).delete();
 };
 SQLdown.prototype.maybeCompact = function () {
   this.counter++;
   this.counter %= this.compactFreq;
   if (this.counter) {
-    console.log('not compacting');
     return Promise.resolve();
   } else {
-    console.log('compacting');
     return this.compact();
   }
 };
