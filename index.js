@@ -115,7 +115,6 @@ SQLdown.prototype._get = function (key, options, cb) {
   });
 };
 SQLdown.prototype._put = function (key, rawvalue, opt, cb) {
-  var self = this;
   if (!this._isBuffer(rawvalue) && process.browser  && typeof rawvalue !== 'object') {
     rawvalue = String(rawvalue);
   }
@@ -123,9 +122,7 @@ SQLdown.prototype._put = function (key, rawvalue, opt, cb) {
   this.db(this.tablename).insert({
     key: key,
     value:value
-  }).then(function () {
-    return self.maybeCompact();
-  }).nodeify(cb);
+  }).exec(cb);
 };
 SQLdown.prototype._del = function (key, opt, cb) {
   this.db(this.tablename).where({key: key}).delete().exec(cb);
@@ -135,7 +132,7 @@ SQLdown.prototype._batch = function (array, options, callback) {
   this.db.transaction(function (trx) {
     return Promise.all(array.map(function (item) {
       if (item.type === 'del') {
-        return self.db(self.tablename).transacting(trx).where({key: item.key}).delete();
+        return trx.where({key: item.key}).from(self.tablename).delete();
       } else {
         return trx.insert({
           key: item.key,
@@ -143,22 +140,7 @@ SQLdown.prototype._batch = function (array, options, callback) {
         }).into(self.tablename);
       }
     }));
-  }).then(function () {
-    return self.maybeCompact();
   }).nodeify(callback);
-};
-SQLdown.prototype.compact = function () {
-  var sub = this.db.max('id').from(this.tablename).groupBy('key');
-  return this.db(this.tablename).not.whereIn('id', sub).delete();
-};
-SQLdown.prototype.maybeCompact = function () {
-  this.counter++;
-  this.counter %= this.compactFreq;
-  if (this.counter || true) {
-    return Promise.resolve();
-  } else {
-    return this.compact();
-  }
 };
 SQLdown.prototype._close = function (callback) {
   var self = this;
