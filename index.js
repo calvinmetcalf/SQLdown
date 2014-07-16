@@ -154,7 +154,7 @@ SQLdown.prototype.compact = function () {
 SQLdown.prototype.maybeCompact = function () {
   this.counter++;
   this.counter %= this.compactFreq;
-  if (this.counter) {
+  if (this.counter || true) {
     return Promise.resolve();
   } else {
     return this.compact();
