@@ -48,7 +48,7 @@ function SQLdown(location) {
     return new SQLdown(location);
   }
   AbstractLevelDOWN.call(this, location);
-  this.db = this.counter = this.compactFreq = this.tablename = void 0;
+  this.db = this.counter = this.dbType = this.compactFreq = this.tablename = void 0;
 }
 SQLdown.destroy = function (location, options, callback) {
   if (typeof options === 'function') {
@@ -69,7 +69,9 @@ SQLdown.destroy = function (location, options, callback) {
 
 SQLdown.prototype._open = function (options, callback) {
   var self = this;
-  this.db = knex(parseConnectionString(this.location));
+  var conn = parseConnectionString(this.location);
+  this.dbType = conn.client;
+  this.db = knex(conn);
   this.tablename = getTableName(this.location, options);
   this.compactFreq = options.compactFrequency || 5;
   this.counter = 0;
@@ -77,8 +79,13 @@ SQLdown.prototype._open = function (options, callback) {
       if (!exists) {
         return self.db.schema.createTable(self.tablename, function (table) {
           table.increments('id').primary().index();
-          table.text('key').index();
-          table.text('value').index();
+          if (self.dbType === 'mysql') {
+            table.text('key');
+            table.text('value');
+          } else {
+            table.text('key').index();
+            table.text('value').index();
+          }
         });
       }
     })
