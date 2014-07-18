@@ -33,7 +33,7 @@
     "prova": "^1.14.0"
   },
   "scripts": {
-    "test": "node ./test/test.js | tspec",
+    "test": "prova ./test/test.js -p | tspec",
     "browser": "prova ./test/test.js -b"
   },
   "license": "MIT",
