@@ -20,7 +20,7 @@
     "double-ended-queue": "^2.0.0-0",
     "through2": "^0.5.1",
     "abstract-leveldown": "^0.12.3",
-    "knex": "tgriesser/knex"
+    "knex": "calvinmetcalf/knex#create-if-not"
   },
   "devDependencies": {
     "tape": "^2.12.1",
@@ -29,10 +29,12 @@
     "pg-query-stream": "^0.6.0",
     "pg": "^3.3.0",
     "mysql": "^2.3.2",
-    "browserify": "^4.2.0"
+    "browserify": "^4.2.0",
+    "prova": "^1.14.0"
   },
   "scripts": {
-    "test": "node ./test/test.js | tspec"
+    "test": "node ./test/test.js | tspec",
+    "browser": "prova ./test/test.js -b"
   },
   "license": "MIT",
   "browser": {

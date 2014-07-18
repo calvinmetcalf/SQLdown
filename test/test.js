@@ -1,4 +1,4 @@
-var tape   = require('tape')
+var tape   = require('prova')
 var leveljs = require('../')
 var testCommon = require('./testCommon')
 
