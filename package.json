@@ -20,10 +20,10 @@
     "double-ended-queue": "^2.0.0-0",
     "through2": "^0.5.1",
     "abstract-leveldown": "^0.12.3",
-    "knex": "calvinmetcalf/knex#create-if-not"
+    "knex": "calvinmetcalf/knex#create-if-not",
+    "es3ify": "^0.1.3"
   },
   "devDependencies": {
-    "tape": "^2.12.1",
     "tap-spec": "^0.2.0",
     "sqlite3": "^2.2.3",
     "pg-query-stream": "^0.6.0",
@@ -34,17 +34,15 @@
   },
   "scripts": {
     "test": "prova ./test/test.js -p | tspec",
-    "browser": "prova ./test/test.js -b"
+    "browser": "prova ./test/test.js -l chrome -bq"
   },
   "license": "MIT",
   "browser": {
     "fs": false
   },
-  "testling": {
-    "files": "test/test.js",
-    "browsers": [
-      "chrome/25..latest",
-      "safari/6.0..latest"
+  "browserify": {
+    "transform": [
+      "es3ify"
     ]
   }
 }
