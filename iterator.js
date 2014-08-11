@@ -1,5 +1,5 @@
 'use strict';
-var inherits = require('util').inherits;
+var inherits = require('inherits');
 var AbstractIterator = require('abstract-leveldown/abstract-iterator');
 var IterStream = require('./iter-stream');
 function goodOptions(opts, name) {
