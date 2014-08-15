@@ -78,11 +78,24 @@ SQLdown.prototype._open = function (options, callback) {
   this.db.schema.createTableIfNotExists(self.tablename, function (table) {
     table.increments('id').primary().index();
     if (self.dbType === 'mysql') {
-      table.text('key');
-      table.text('value');
+    	//Blobs are really inefficient in MySQL so should provide an option 
+    	//for end users to take into account the size of data stored
+    	//varchars can be indexed for keys
+    	//Also, values (which can be large) don't need to be indexed for any dbType
+    	if (options.optimized.keySize){
+    		table.string('key', options.optimized.keySize).index();
+    	} else {
+    		table.text('key');	
+    	}
+      
+        if (options.optimized.valueSize){
+    		table.string('value', options.optimized.valueSize);
+    	} else {
+    		table.text('value');	
+    	}
     } else {
       table.text('key').index();
-      table.text('value').index();
+      table.text('value');
     }
   })
     .nodeify(callback);
