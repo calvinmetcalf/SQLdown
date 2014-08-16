@@ -82,13 +82,13 @@ SQLdown.prototype._open = function (options, callback) {
     	//for end users to take into account the size of data stored
     	//varchars can be indexed for keys
     	//Also, values (which can be large) don't need to be indexed for any dbType
-    	if (options.optimized.keySize){
+    	if (options.optimized && options.optimized.keySize){
     		table.string('key', options.optimized.keySize).index();
     	} else {
     		table.text('key');	
     	}
       
-        if (options.optimized.valueSize){
+        if (options.optimized && options.optimized.valueSize){
     		table.string('value', options.optimized.valueSize);
     	} else {
     		table.text('value');	
