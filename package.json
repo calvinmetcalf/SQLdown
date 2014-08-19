@@ -21,7 +21,7 @@
     "through2": "^0.5.1",
     "abstract-leveldown": "^0.12.3",
     "es3ify": "^0.1.3",
-    "knex": "^0.6.22"
+    "knex": "tgriesser/knex"
   },
   "devDependencies": {
     "tap-spec": "^0.2.0",
