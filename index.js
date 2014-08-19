@@ -78,11 +78,20 @@ SQLdown.prototype._open = function (options, callback) {
   this.db.schema.createTableIfNotExists(self.tablename, function (table) {
     table.increments('id').primary().index();
     if (self.dbType === 'mysql') {
-      table.text('key');
-      table.text('value');
+    	if (options.optimized && options.optimized.keySize){
+    		table.string('key', options.optimized.keySize).index();
+    	} else {
+    		table.text('key');	
+    	}
+      
+        if (options.optimized && options.optimized.valueSize){
+    		table.string('value', options.optimized.valueSize);
+    	} else {
+    		table.text('value');	
+    	}
     } else {
       table.text('key').index();
-      table.text('value').index();
+      table.text('value');
     }
   })
     .nodeify(callback);
