@@ -77,21 +77,18 @@ SQLdown.prototype._open = function (options, callback) {
   this.counter = 0;
   this.db.schema.createTableIfNotExists(self.tablename, function (table) {
     table.increments('id').primary().index();
-    if (self.dbType === 'mysql') {
-    	if (options.optimized && options.optimized.keySize){
-    		table.string('key', options.optimized.keySize).index();
-    	} else {
-    		table.text('key');	
-    	}
-      
-        if (options.optimized && options.optimized.valueSize){
-    		table.string('value', options.optimized.valueSize);
-    	} else {
-    		table.text('value');	
-    	}
+    if (options.keySize){
+      table.string('key', options.keySize).index();
+    } else if(self.dbType === 'mysql') {
+      table.text('key');  
     } else {
       table.text('key').index();
-      table.text('value');
+    }
+      
+    if (options.valueSize){
+      table.string('value', options.valueSize);
+    } else {
+      table.text('value');  
     }
   })
     .nodeify(callback);
@@ -131,7 +128,7 @@ SQLdown.prototype._put = function (key, rawvalue, opt, cb) {
   if (!this._isBuffer(rawvalue) && process.browser  && typeof rawvalue !== 'object') {
     rawvalue = String(rawvalue);
   }
-	var value = JSON.stringify(rawvalue);
+  var value = JSON.stringify(rawvalue);
   this.db(this.tablename).insert({
     key: key,
     value:value
