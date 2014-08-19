@@ -75,14 +75,14 @@ SQLdown.prototype._open = function (options, callback) {
   this.tablename = getTableName(this.location, options);
   this.compactFreq = options.compactFrequency || 25;
   this.counter = 0;
-  this.db.schema.createTableIfNotExists(self.tablename, function (table) {
+  var table = this.db.schema.createTableIfNotExists(self.tablename, function (table) {
     table.increments('id').primary().index();
     if (options.keySize){
-      table.string('key', options.keySize).index();
+      table.string('key', options.keySize).index(' ');
     } else if(self.dbType === 'mysql') {
       table.text('key');  
     } else {
-      table.text('key').index();
+      table.text('key').index(' ');
     }
       
     if (options.valueSize){
@@ -90,8 +90,9 @@ SQLdown.prototype._open = function (options, callback) {
     } else {
       table.text('value');  
     }
-  })
-    .nodeify(callback);
+  });
+  console.log(table.toString());
+  table.nodeify(callback);
 };
 
 SQLdown.prototype._get = function (key, options, cb) {
