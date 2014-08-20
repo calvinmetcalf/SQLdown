@@ -76,7 +76,7 @@ SQLdown.prototype._open = function (options, callback) {
   this.compactFreq = options.compactFrequency || 25;
   this.counter = 0;
   var tableCreation;
-  if (process.browser) {
+  if (process.browser || (self.dbType === 'mysql' && !options.keySize)) {
     tableCreation = this.db.schema.createTableIfNotExists(self.tablename, function (table) {
       table.increments('id').primary();
       if (options.keySize){
