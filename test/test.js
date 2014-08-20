@@ -23,7 +23,7 @@ function test(testCommon) {
     var db;
     test('setUp common', testCommon.setUp)
     test('open close open', function (t) {
-      var db = leveldown(testCommon.location())
+      db = leveldown(testCommon.location())
 
       // default createIfMissing=true, errorIfExists=false
       db.open(function (err) {
@@ -36,6 +36,14 @@ function test(testCommon) {
             })  
           })
         })
+    });
+    test('close up', function (t) {
+      db.close(function (err) {
+        if (err) {
+          process.exit(1);
+        }
+        t.end();
+      });
     });
   }
   custome(leveljs, tape, testCommon)
