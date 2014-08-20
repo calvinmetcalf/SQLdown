@@ -17,6 +17,32 @@ function test(testCommon) {
   require('abstract-leveldown/abstract/close-test').close(leveljs, tape, testCommon);
   require('abstract-leveldown/abstract/iterator-test').all(leveljs, tape, testCommon)
   require('abstract-leveldown/abstract/ranges-test').all(leveljs, tape, testCommon)
+
+  function custome(leveldown, test, testCommon) {
+
+    var db;
+    test('setUp common', testCommon.setUp)
+    test('setUp db', function (t) {
+      db = leveldown(testCommon.location())
+      db.open(t.end.bind(t))
+    })
+    test('open close open', function (t) {
+      var db = leveldown(testCommon.location())
+
+      // default createIfMissing=true, errorIfExists=false
+      db.open(function (err) {
+          t.notOk(err, 'no error')
+          db.close(function (err) {
+            t.notOk(err, 'no error')
+            db.open(function (err) {
+              t.notOk(err, 'no error')
+              t.end();
+            })  
+          })
+        })
+    });
+  }
+  custome(leveljs, tape, testCommon)
 }
 if (process.env.DB === 'postgres') {
   test(testCommon('postgres://localhost/sqldown?table=_leveldown_test_db_'));
