@@ -22,10 +22,6 @@ function test(testCommon) {
 
     var db;
     test('setUp common', testCommon.setUp)
-    test('setUp db', function (t) {
-      db = leveldown(testCommon.location())
-      db.open(t.end.bind(t))
-    })
     test('open close open', function (t) {
       var db = leveldown(testCommon.location())
 

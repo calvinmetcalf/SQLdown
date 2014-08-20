@@ -94,7 +94,7 @@ SQLdown.prototype._open = function (options, callback) {
   } else {
     tableCreation = this.db.schema.hasTable(self.tablename).then(function (exists){
       if (exists) {
-        return;
+        return true;
       }
       return self.db.schema.createTable(self.tablename, function (table) {
         table.increments('id').primary().index();
