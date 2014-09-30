@@ -75,23 +75,46 @@ SQLdown.prototype._open = function (options, callback) {
   this.tablename = getTableName(this.location, options);
   this.compactFreq = options.compactFrequency || 25;
   this.counter = 0;
-  this.db.schema.createTableIfNotExists(self.tablename, function (table) {
-    table.increments('id').primary().index();
-    if (options.keySize){
-      table.string('key', options.keySize).index();
-    } else if(self.dbType === 'mysql') {
-      table.text('key');  
-    } else {
-      table.text('key').index();
-    }
-      
-    if (options.valueSize){
-      table.string('value', options.valueSize);
-    } else {
-      table.text('value');  
-    }
-  })
-    .nodeify(callback);
+  var tableCreation;
+  if (process.browser || (self.dbType === 'mysql' && !options.keySize)) {
+    tableCreation = this.db.schema.createTableIfNotExists(self.tablename, function (table) {
+      table.increments('id').primary();
+      if (options.keySize){
+        table.string('key', options.keySize);
+      } else {
+        table.text('key');
+      }
+        
+      if (options.valueSize){
+        table.string('value', options.valueSize);
+      } else {
+        table.text('value');
+      }
+    });
+  } else {
+    tableCreation = this.db.schema.hasTable(self.tablename).then(function (exists){
+      if (exists) {
+        return true;
+      }
+      return self.db.schema.createTable(self.tablename, function (table) {
+        table.increments('id').primary().index();
+        if (options.keySize){
+          table.string('key', options.keySize).index();
+        } else if(self.dbType === 'mysql') {
+          table.text('key');  
+        } else {
+          table.text('key').index();
+        }
+          
+        if (options.valueSize){
+          table.string('value', options.valueSize);
+        } else {
+          table.text('value');
+        }
+      });
+    });
+  }
+  tableCreation.nodeify(callback);
 };
 
 SQLdown.prototype._get = function (key, options, cb) {
