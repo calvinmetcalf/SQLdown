@@ -38,11 +38,12 @@ function Iterator(db, options) {
     goodOptions(options, i);
   });
   this._count = 0;
-  this._limit = options.limit || -1;
-  this._sql = this.buildSQL();
-  if (this._limit > 0) {
-    this._sql.limit(this._limit);
+  if ('limit' in options) {
+    this._limit = options.limit;
+  } else {
+    this._limit = -1;
   }
+
   if ('keyAsBuffer' in options) {
     this._keyAsBuffer = options.keyAsBuffer;
   } else {
@@ -53,7 +54,18 @@ function Iterator(db, options) {
   } else {
     this._valueAsBuffer = true;
   }
-  this._sql = new IterStream(this._sql.stream());
+
+  this._sql = this.buildSQL();
+  if (this._limit > 0) {
+    this._sql.limit(this._limit);
+  }
+  if (this._limit === 0) {
+    this._next = function (cb) {
+      process.nextTick(cb);
+    };
+  } else {
+    this._sql = new IterStream(this._sql.stream());
+  }
 }
 Iterator.prototype._next = function (callback) {
   var self = this;
