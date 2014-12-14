@@ -42,7 +42,9 @@ function test(testCommon) {
         if (err) {
           process.exit(1);
         }
-        t.end();
+        testCommon.cleanup(function (){
+          t.end();
+        });
       });
     });
   }
