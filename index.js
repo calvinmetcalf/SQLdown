@@ -28,6 +28,7 @@ function parseConnectionString(string) {
     protocol = protocol.slice(0, -1);
   }
   return {
+    debug: true,
     client: protocol,
     connection: string
   };
