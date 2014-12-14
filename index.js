@@ -75,23 +75,33 @@ SQLdown.prototype._open = function (options, callback) {
   this.tablename = getTableName(this.location, options);
   this.compactFreq = options.compactFrequency || 25;
   this.counter = 0;
-  this.db.schema.createTableIfNotExists(self.tablename, function (table) {
-    table.increments('id').primary().index();
-    if (options.keySize){
-      table.string('key', options.keySize).index();
-    } else if(self.dbType === 'mysql') {
-      table.text('key');  
-    } else {
-      table.text('key').index();
-    }
-      
-    if (options.valueSize){
-      table.string('value', options.valueSize);
-    } else {
-      table.text('value');  
-    }
-  })
-    .nodeify(callback);
+  function createTable(verb) {
+    return self.db.schema[verb](self.tablename, function (table) {
+      table.increments('id').primary();
+      if (options.keySize){
+        table.string('key', options.keySize).index();
+      } else if(self.dbType === 'mysql') {
+        table.text('key');  
+      } else {
+        table.text('key').index();
+      }
+        
+      if (options.valueSize){
+        table.string('value', options.valueSize);
+      } else {
+        table.text('value');  
+      }
+    });
+  }
+  if (process.browser){
+    createTable('createTableIfNotExists').nodeify(callback);
+  } else {
+    self.db.schema.hasTable(self.tablename).then(function (has) {
+      if (!has) {
+        return createTable('createTable')
+      }
+    }).nodeify(callback);
+  }
 };
 
 SQLdown.prototype._get = function (key, options, cb) {
