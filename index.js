@@ -149,11 +149,20 @@ SQLdown.prototype._put = function (key, rawvalue, opt, cb) {
 SQLdown.prototype._del = function (key, opt, cb) {
   this.db(this.tablename).where({key: key}).delete().exec(cb);
 };
+function unique(array) {
+  var things = {};
+  array.forEach(function (item) {
+    things[item.key] = item;
+  });
+  return Object.keys(things).map(function (key) {
+    return things[key];
+  });
+}
 SQLdown.prototype._batch = function (array, options, callback) {
   var self = this;
   var inserts = 0;
   this.db.transaction(function (trx) {
-    return Promise.all(array.map(function (item) {
+    return Promise.all(unique(array).map(function (item) {
       if (item.type === 'del') {
         return trx.where({key: item.key}).from(self.tablename).delete();
       } else {
