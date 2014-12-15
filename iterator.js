@@ -28,7 +28,7 @@ var names = [
   'lt',
   'lte'
 ];
-function Iterator(db, options) {
+function Iterator(db, options, cb) {
   AbstractIterator.call(this, db);
   this._db = db.db;
   options = options || {};
@@ -38,6 +38,7 @@ function Iterator(db, options) {
     goodOptions(options, i);
   });
   this._count = 0;
+  var self = this;
   if ('limit' in options) {
     this._limit = options.limit;
   } else {
@@ -65,6 +66,22 @@ function Iterator(db, options) {
     };
   } else {
     this._sql = new IterStream(this._sql.stream());
+    this.__value = null;
+    this.__cb = null;
+    this._next(function (err, key, value) {
+      if (typeof self.__cb === 'function') {
+        self.__value = null;
+        if (self._ended || (err === void 0 && key === void 0 && value === void 0)) {
+          return self.__cb();
+        }
+        self.__cb(err, key, value);
+        self.__cb = null;
+      } else {
+        self.__value = [err, key, value];
+      }
+      cb();
+    });
+    this.__value = 'in progress';
   }
 }
 Iterator.prototype._next = function (callback) {
@@ -72,8 +89,25 @@ Iterator.prototype._next = function (callback) {
   if (self._ended) {
     callback();
   }
+  if (this.__value !== null) {
+    if (this.__value === 'in progress') {
+      this.__cb = callback;
+      return;
+    } else {
+      return process.nextTick(function () {
+        var value = self.__value;
+        self.__value = null;
+        if (value.every(function (val) {
+          return val === void 0;
+        })) {
+          return callback();
+        }
+        callback(value[0], value[1], value[2]);
+      });
+    }
+  }
   this._sql.next(function (err, resp) {
-    if (err) {
+    if (err || !resp) {
       return callback();
     }
     var key = resp.key;

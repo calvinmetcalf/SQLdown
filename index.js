@@ -28,7 +28,6 @@ function parseConnectionString(string) {
     protocol = protocol.slice(0, -1);
   }
   return {
-    debug: true,
     client: protocol,
     connection: string
   };
@@ -50,6 +49,7 @@ function SQLdown(location) {
   }
   AbstractLevelDOWN.call(this, location);
   this.db = this.counter = this.dbType = this.compactFreq = this.tablename = void 0;
+  this._paused = false;
 }
 SQLdown.destroy = function (location, options, callback) {
   if (typeof options === 'function') {
@@ -140,15 +140,20 @@ SQLdown.prototype._put = function (key, rawvalue, opt, cb) {
     rawvalue = String(rawvalue);
   }
   var value = JSON.stringify(rawvalue);
-  this.db(this.tablename).insert({
-    key: key,
-    value:value
-  }).then(function () {
-    return self.maybeCompact();
-  }).nodeify(cb);
+  self.pause(function () {
+    self.db(self.tablename).insert({
+      key: key,
+      value:value
+    }).then(function () {
+      return self.maybeCompact();
+    }).nodeify(cb);
+  });
 };
 SQLdown.prototype._del = function (key, opt, cb) {
-  this.db(this.tablename).where({key: key}).delete().exec(cb);
+  var self = this;
+  this.pause(function () {
+    self.db(self.tablename).where({key: key}).delete().exec(cb);
+  });
 };
 function unique(array) {
   var things = {};
@@ -162,21 +167,23 @@ function unique(array) {
 SQLdown.prototype._batch = function (array, options, callback) {
   var self = this;
   var inserts = 0;
-  this.db.transaction(function (trx) {
-    return Promise.all(unique(array).map(function (item) {
-      if (item.type === 'del') {
-        return trx.where({key: item.key}).from(self.tablename).delete();
-      } else {
-        inserts++;
-        return trx.insert({
-          key: item.key,
-          value:JSON.stringify(item.value)
-        }).into(self.tablename);
-      }
-    }));
-  }).then(function () {
-    return self.maybeCompact(inserts);
-  }).nodeify(callback);
+  this.pause(function () {
+    self.db.transaction(function (trx) {
+      return Promise.all(unique(array).map(function (item) {
+        if (item.type === 'del') {
+          return trx.where({key: item.key}).from(self.tablename).delete();
+        } else {
+          inserts++;
+          return trx.insert({
+            key: item.key,
+            value:JSON.stringify(item.value)
+          }).into(self.tablename);
+        }
+      }));
+    }).then(function () {
+      return self.maybeCompact(inserts);
+    }).nodeify(callback);
+  });
 };
 SQLdown.prototype.compact = function () {
   var self = this;
@@ -208,7 +215,18 @@ SQLdown.prototype._close = function (callback) {
     self.db.destroy().exec(callback);
   });
 };
-
+SQLdown.prototype.pause = function (cb) {
+  if (!this._paused) {
+    cb();
+  } else {
+    this.db.once('unpaused', cb);
+  }
+};
 SQLdown.prototype.iterator = function (options) {
-  return new Iter(this, options);
+  var self = this;
+  this._paused = true;
+  return new Iter(this, options, function () {
+    self._paused = false;
+    self.db.emit('unpaused');
+  });
 };
