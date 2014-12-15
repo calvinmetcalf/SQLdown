@@ -68,6 +68,7 @@ function Iterator(db, options, cb) {
     this._sql = new IterStream(this._sql.stream());
     this.__value = null;
     this.__cb = null;
+    this.___cb = cb;
     this._next(function (err, key, value) {
       if (typeof self.__cb === 'function') {
         self.__value = null;
@@ -79,15 +80,25 @@ function Iterator(db, options, cb) {
       } else {
         self.__value = [err, key, value];
       }
-      cb();
+      if (typeof self.___cb === 'function') {
+        self.___cb();
+        self.___cb = null;
+      }
     });
     this.__value = 'in progress';
   }
 }
+Iterator.prototype._end = function (callback) {
+  if (typeof this.___cb === 'function') {
+    this.___cb();
+    this.___cb = null;
+  }
+  callback();
+};
 Iterator.prototype._next = function (callback) {
   var self = this;
   if (self._ended) {
-    callback();
+    return callback();
   }
   if (this.__value !== null) {
     if (this.__value === 'in progress') {

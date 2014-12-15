@@ -29,8 +29,32 @@ function parseConnectionString(string) {
   }
   return {
     client: protocol,
-    connection: string
+    connection: fixDB(parsed)
   };
+}
+function fixDB(parsed) {
+  var out = {};
+  var db = parsed.pathname;
+  if (db[0] === '/') {
+    db = db.slice(1);
+  }
+  out.database = db;
+  if (parsed.hostname) {
+    out.host = parsed.hostname;
+  }
+  if (parsed.port) {
+    out.port = parsed.port;
+  }
+  if (parsed.auth) {
+    var idx = parsed.auth.indexOf(':');
+    if (~idx) {
+      out.user = parsed.auth.slice(0, idx);
+      if (idx < parsed.auth.length - 1) {
+        out.password = parsed.auth.slice(idx + 1);
+      }
+    }
+  }
+  return out;
 }
 function getTableName (location, options) {
   if (process.browser) {
@@ -95,11 +119,13 @@ SQLdown.prototype._open = function (options, callback) {
     });
   }
   if (process.browser){
-    createTable('createTableIfNotExists').nodeify(callback);
+    this.db.select('id').from(this.tablename).limit(1).catch(function (){
+      return createTable('createTable');
+    }).nodeify(callback);
   } else {
     self.db.schema.hasTable(self.tablename).then(function (has) {
       if (!has) {
-        return createTable('createTable')
+        return createTable('createTable');
       }
     }).nodeify(callback);
   }
