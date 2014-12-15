@@ -100,8 +100,8 @@ SQLdown.prototype._open = function (options, callback) {
   this.tablename = getTableName(this.location, options);
   this.compactFreq = options.compactFrequency || 25;
   this.counter = 0;
-  function createTable(verb) {
-    return self.db.schema[verb](self.tablename, function (table) {
+  function createTable() {
+    return self.db.schema.createTable(self.tablename, function (table) {
       table.increments('id').primary();
       if (options.keySize){
         table.string('key', options.keySize).index();
@@ -120,12 +120,12 @@ SQLdown.prototype._open = function (options, callback) {
   }
   if (process.browser){
     this.db.select('id').from(this.tablename).limit(1).catch(function (){
-      return createTable('createTable');
+      return createTable();
     }).nodeify(callback);
   } else {
     self.db.schema.hasTable(self.tablename).then(function (has) {
       if (!has) {
-        return createTable('createTable');
+        return createTable();
       }
     }).nodeify(callback);
   }
