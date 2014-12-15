@@ -1,7 +1,7 @@
 {
   "name": "sqldown",
   "description": "A sqlite3 implementation of the LevelDOWN API",
-  "version": "1.1.1",
+  "version": "1.2.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/calvinmetcalf/sqldown.git"
