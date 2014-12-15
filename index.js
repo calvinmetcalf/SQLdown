@@ -28,6 +28,7 @@ function parseConnectionString(string) {
     protocol = protocol.slice(0, -1);
   }
   return {
+    debug: true,
     client: protocol,
     connection: string
   };
@@ -75,46 +76,33 @@ SQLdown.prototype._open = function (options, callback) {
   this.tablename = getTableName(this.location, options);
   this.compactFreq = options.compactFrequency || 25;
   this.counter = 0;
-  var tableCreation;
-  if (process.browser || (self.dbType === 'mysql' && !options.keySize)) {
-    tableCreation = this.db.schema.createTableIfNotExists(self.tablename, function (table) {
+  function createTable(verb) {
+    return self.db.schema[verb](self.tablename, function (table) {
       table.increments('id').primary();
       if (options.keySize){
-        table.string('key', options.keySize);
+        table.string('key', options.keySize).index();
+      } else if(self.dbType === 'mysql') {
+        table.text('key');  
       } else {
-        table.text('key');
+        table.text('key').index();
       }
         
       if (options.valueSize){
         table.string('value', options.valueSize);
       } else {
-        table.text('value');
+        table.text('value');  
       }
-    });
-  } else {
-    tableCreation = this.db.schema.hasTable(self.tablename).then(function (exists){
-      if (exists) {
-        return true;
-      }
-      return self.db.schema.createTable(self.tablename, function (table) {
-        table.increments('id').primary().index();
-        if (options.keySize){
-          table.string('key', options.keySize).index();
-        } else if(self.dbType === 'mysql') {
-          table.text('key');  
-        } else {
-          table.text('key').index();
-        }
-          
-        if (options.valueSize){
-          table.string('value', options.valueSize);
-        } else {
-          table.text('value');
-        }
-      });
     });
   }
-  tableCreation.nodeify(callback);
+  if (process.browser){
+    createTable('createTableIfNotExists').nodeify(callback);
+  } else {
+    self.db.schema.hasTable(self.tablename).then(function (has) {
+      if (!has) {
+        return createTable('createTable')
+      }
+    }).nodeify(callback);
+  }
 };
 
 SQLdown.prototype._get = function (key, options, cb) {
@@ -162,11 +150,20 @@ SQLdown.prototype._put = function (key, rawvalue, opt, cb) {
 SQLdown.prototype._del = function (key, opt, cb) {
   this.db(this.tablename).where({key: key}).delete().exec(cb);
 };
+function unique(array) {
+  var things = {};
+  array.forEach(function (item) {
+    things[item.key] = item;
+  });
+  return Object.keys(things).map(function (key) {
+    return things[key];
+  });
+}
 SQLdown.prototype._batch = function (array, options, callback) {
   var self = this;
   var inserts = 0;
   this.db.transaction(function (trx) {
-    return Promise.all(array.map(function (item) {
+    return Promise.all(unique(array).map(function (item) {
       if (item.type === 'del') {
         return trx.where({key: item.key}).from(self.tablename).delete();
       } else {

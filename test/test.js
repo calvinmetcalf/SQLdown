@@ -1,4 +1,4 @@
-var tape   = require('prova')
+var tape   = require('tape')
 var leveljs = require('../')
 var testCommon = require('./testCommon')
 
@@ -42,7 +42,9 @@ function test(testCommon) {
         if (err) {
           process.exit(1);
         }
-        t.end();
+        testCommon.cleanup(function (){
+          t.end();
+        });
       });
     });
   }
