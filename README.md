@@ -23,7 +23,7 @@ Test setup and much else taken from [level-js](https://github.com/maxogden/level
 
 ## Setup
 
-To get around the fact that postgres does not feature upserts instead of a simple table with 2 columns, `key` and `value` with `key` being the primary and unique key, instead we have a more complex setup with 3 columns `id`, `key` and `value` with `id` being an auto-incremented integer. When we do gets we query for the value with the given key which has the highest id.
+To get around the fact that postgres does not feature upserts instead of a simple table with 2 columns, `key` and `value` with `key` being the primary and unique key, instead we have a more complex setup with 3 columns `id`, `key` and `value` with `id` being an auto-incremented integer. When we `get` we query for the value with the given key which has the highest id.
 
 This could lead to much excess data if you were to update the same key a bunch so it's set to periodically (by default every 25 puts) clean up any entries that aren't the max id for a given key.
 
