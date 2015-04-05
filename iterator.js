@@ -30,7 +30,7 @@ var names = [
 ];
 function Iterator(db, options, cb) {
   AbstractIterator.call(this, db);
-  this._db = db.db;
+  this._db = db.knexDb;
   options = options || {};
   this._order = !options.reverse;
   this._options = options;

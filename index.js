@@ -72,7 +72,7 @@ function SQLdown(location) {
     return new SQLdown(location);
   }
   AbstractLevelDOWN.call(this, location);
-  this.db = this.counter = this.dbType = this.compactFreq = this.tablename = void 0;
+  this.knexDb = this.counter = this.dbType = this.compactFreq = this.tablename = void 0;
   this._paused = false;
 }
 SQLdown.destroy = function (location, options, callback) {
@@ -96,12 +96,12 @@ SQLdown.prototype._open = function (options, callback) {
   var self = this;
   var conn = parseConnectionString(this.location);
   this.dbType = conn.client;
-  this.db = knex(conn);
+  this.knexDb = knex(conn);
   this.tablename = getTableName(this.location, options);
   this.compactFreq = options.compactFrequency || 25;
   this.counter = 0;
   function createTable() {
-    return self.db.schema.createTable(self.tablename, function (table) {
+    return self.knexDb.schema.createTable(self.tablename, function (table) {
       table.increments('id').primary();
       if (options.keySize){
         table.string('key', options.keySize).index();
@@ -119,11 +119,11 @@ SQLdown.prototype._open = function (options, callback) {
     });
   }
   if (process.browser){
-    this.db.select('id').from(this.tablename).limit(1).catch(function (){
+    this.knexDb.select('id').from(this.tablename).limit(1).catch(function (){
       return createTable();
     }).nodeify(callback);
   } else {
-    self.db.schema.hasTable(self.tablename).then(function (has) {
+    self.knexDb.schema.hasTable(self.tablename).then(function (has) {
       if (!has) {
         return createTable();
       }
@@ -140,7 +140,7 @@ SQLdown.prototype._get = function (key, options, cb) {
   if (options.raw) {
     asBuffer = false;
   }
-  this.db.select('value').from(this.tablename).whereIn('id', function (){
+  this.knexDb.select('value').from(this.tablename).whereIn('id', function (){
     this.max('id').from(self.tablename).where({key:key});
   }).exec(function (err, res) {
     if (err) {
@@ -167,7 +167,7 @@ SQLdown.prototype._put = function (key, rawvalue, opt, cb) {
   }
   var value = JSON.stringify(rawvalue);
   self.pause(function () {
-    self.db(self.tablename).insert({
+    self.knexDb(self.tablename).insert({
       key: key,
       value:value
     }).then(function () {
@@ -178,7 +178,7 @@ SQLdown.prototype._put = function (key, rawvalue, opt, cb) {
 SQLdown.prototype._del = function (key, opt, cb) {
   var self = this;
   this.pause(function () {
-    self.db(self.tablename).where({key: key}).delete().exec(cb);
+    self.knexDb(self.tablename).where({key: key}).delete().exec(cb);
   });
 };
 function unique(array) {
@@ -194,7 +194,7 @@ SQLdown.prototype._batch = function (array, options, callback) {
   var self = this;
   var inserts = 0;
   this.pause(function () {
-    self.db.transaction(function (trx) {
+    self.knexDb.transaction(function (trx) {
       return Promise.all(unique(array).map(function (item) {
         if (item.type === 'del') {
           return trx.where({key: item.key}).from(self.tablename).delete();
@@ -213,9 +213,9 @@ SQLdown.prototype._batch = function (array, options, callback) {
 };
 SQLdown.prototype.compact = function () {
   var self = this;
-  return this.db(this.tablename).select('key','value').not.whereIn('id', function () {
+  return this.knexDb(this.tablename).select('key','value').not.whereIn('id', function () {
     this.select('id').from(function () {
-      this.select(self.db.raw('max(id) as id')).from(self.tablename).groupBy('key').as('__tmp__table');
+      this.select(self.knexDb.raw('max(id) as id')).from(self.tablename).groupBy('key').as('__tmp__table');
     });
   }).delete();
 };
@@ -238,14 +238,14 @@ SQLdown.prototype.maybeCompact = function (inserts) {
 SQLdown.prototype._close = function (callback) {
   var self = this;
   process.nextTick(function () {
-    self.db.destroy().exec(callback);
+    self.knexDb.destroy().exec(callback);
   });
 };
 SQLdown.prototype.pause = function (cb) {
   if (!this._paused) {
     cb();
   } else {
-    this.db.once('unpaused', cb);
+    this.knexDb.once('unpaused', cb);
   }
 };
 SQLdown.prototype.iterator = function (options) {
@@ -253,6 +253,6 @@ SQLdown.prototype.iterator = function (options) {
   this._paused = true;
   return new Iter(this, options, function () {
     self._paused = false;
-    self.db.emit('unpaused');
+    self.knexDb.emit('unpaused');
   });
 };
