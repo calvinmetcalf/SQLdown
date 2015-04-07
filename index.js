@@ -151,8 +151,12 @@ SQLdown.prototype._get = function (key, options, cb) {
     }
     try {
       var value = JSON.parse(res[0].value);
-      if (asBuffer && value.type === 'Buffer' && value.data) {
-        value = new Buffer(value.data, 'base64');
+      if (asBuffer) {
+        if (value.type === 'Buffer' && value.data) {
+          value = new Buffer(value.data, 'base64');
+        } else {
+          value = new Buffer(value);
+        }
       }
       cb(null, value);
     } catch (e) {
