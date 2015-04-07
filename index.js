@@ -149,10 +149,11 @@ SQLdown.prototype._get = function (key, options, cb) {
     if (!res.length) {
       return cb(new Error('NotFound'));
     }
+    
     try {
       var value = JSON.parse(res[0].value);
       if (asBuffer) {
-        value = new Buffer(value);
+        value = new Buffer(value.data);
       }
       cb(null, value);
     } catch (e) {
