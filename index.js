@@ -140,6 +140,7 @@ SQLdown.prototype._get = function (key, options, cb) {
   if (options.raw) {
     asBuffer = false;
   }
+
   this.db.select('value').from(this.tablename).whereIn('id', function (){
     this.max('id').from(self.tablename).where({key:key});
   }).exec(function (err, res) {
@@ -149,10 +150,11 @@ SQLdown.prototype._get = function (key, options, cb) {
     if (!res.length) {
       return cb(new Error('NotFound'));
     }
+    
     try {
       var value = JSON.parse(res[0].value);
       if (asBuffer) {
-        value = new Buffer(value);
+        value = new Buffer(value.data);
       }
       cb(null, value);
     } catch (e) {
