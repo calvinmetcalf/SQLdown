@@ -196,6 +196,11 @@ SQLdown.prototype._put = function (key, rawvalue, opt, cb) {
 
 SQLdown.prototype._del = function (key, opt, cb) {
   var self = this;
+  
+  if(this._isBuffer(key)){
+    key = key.toString('base64');
+  }
+
   this.pause(function () {
     self.db(self.tablename).where({key: key}).delete().exec(cb);
   });
@@ -215,15 +220,15 @@ SQLdown.prototype._batch = function (array, options, callback) {
   this.pause(function () {
     self.db.transaction(function (trx) {
       return Promise.all(unique(array).map(function (item) {
+
+        if(self._isBuffer(item.key)){
+          item.key = item.key.toString('base64');
+        }
+
         if (item.type === 'del') {
           return trx.where({key: item.key}).from(self.tablename).delete();
         } else {
           inserts++;
-
-          if(self._isBuffer(item.key)){
-            item.key = item.key.toString('base64');
-          }
-
           return trx.insert({
             key: item.key,
             value:JSON.stringify(item.value)
