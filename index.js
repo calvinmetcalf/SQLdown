@@ -136,7 +136,7 @@ SQLdown.prototype._get = function (key, options, cb) {
   var asBuffer = true;
 
   if(this._isBuffer(key)){
-    key = key.toString('base64');
+    key = key.toString();
   }
 
   if (options.asBuffer === false) {
@@ -180,7 +180,7 @@ SQLdown.prototype._put = function (key, rawvalue, opt, cb) {
   }
 
   if(this._isBuffer(key)){
-    key = key.toString('base64');
+    key = key.toString();
   }
 
   var value = JSON.stringify(rawvalue);
@@ -198,7 +198,7 @@ SQLdown.prototype._del = function (key, opt, cb) {
   var self = this;
   
   if(this._isBuffer(key)){
-    key = key.toString('base64');
+    key = key.toString();
   }
 
   this.pause(function () {
@@ -222,7 +222,7 @@ SQLdown.prototype._batch = function (array, options, callback) {
       return Promise.all(unique(array).map(function (item) {
 
         if(self._isBuffer(item.key)){
-          item.key = item.key.toString('base64');
+          item.key = item.key.toString();
         }
 
         if (item.type === 'del') {
