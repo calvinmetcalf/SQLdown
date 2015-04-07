@@ -153,7 +153,11 @@ SQLdown.prototype._get = function (key, options, cb) {
     try {
       var value = JSON.parse(res[0].value);
       if (asBuffer) {
-        value = new Buffer(value.data);
+        if(value.type === 'Buffer'){
+          value = new Buffer(value.data);
+        }else{
+          value = new Buffer(value);
+        }
       }
       cb(null, value);
     } catch (e) {
@@ -161,6 +165,7 @@ SQLdown.prototype._get = function (key, options, cb) {
     }
   });
 };
+
 SQLdown.prototype._put = function (key, rawvalue, opt, cb) {
   var self = this;
   if (!this._isBuffer(rawvalue) && process.browser  && typeof rawvalue !== 'object') {
@@ -176,6 +181,7 @@ SQLdown.prototype._put = function (key, rawvalue, opt, cb) {
     }).nodeify(cb);
   });
 };
+
 SQLdown.prototype._del = function (key, opt, cb) {
   var self = this;
   this.pause(function () {
