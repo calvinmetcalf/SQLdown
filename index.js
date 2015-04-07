@@ -134,6 +134,11 @@ SQLdown.prototype._open = function (options, callback) {
 SQLdown.prototype._get = function (key, options, cb) {
   var self = this;
   var asBuffer = true;
+
+  if(this._isBuffer(key)){
+    key = key.toString();
+  }
+
   if (options.asBuffer === false) {
     asBuffer = false;
   }
@@ -149,10 +154,15 @@ SQLdown.prototype._get = function (key, options, cb) {
     if (!res.length) {
       return cb(new Error('NotFound'));
     }
+
     try {
       var value = JSON.parse(res[0].value);
       if (asBuffer) {
-        value = new Buffer(value);
+        if(value.type === 'Buffer'){
+          value = new Buffer(value.data);
+        }else{
+          value = new Buffer(value);
+        }
       }
       cb(null, value);
     } catch (e) {
@@ -160,11 +170,18 @@ SQLdown.prototype._get = function (key, options, cb) {
     }
   });
 };
+
 SQLdown.prototype._put = function (key, rawvalue, opt, cb) {
   var self = this;
+
   if (!this._isBuffer(rawvalue) && process.browser  && typeof rawvalue !== 'object') {
     rawvalue = String(rawvalue);
   }
+
+  if(this._isBuffer(key)){
+    key = key.toString();
+  }
+
   var value = JSON.stringify(rawvalue);
   self.pause(function () {
     self.knexDb(self.tablename).insert({
@@ -175,8 +192,14 @@ SQLdown.prototype._put = function (key, rawvalue, opt, cb) {
     }).nodeify(cb);
   });
 };
+
 SQLdown.prototype._del = function (key, opt, cb) {
   var self = this;
+  
+  if(this._isBuffer(key)){
+    key = key.toString();
+  }
+
   this.pause(function () {
     self.knexDb(self.tablename).where({key: key}).delete().exec(cb);
   });
@@ -196,6 +219,11 @@ SQLdown.prototype._batch = function (array, options, callback) {
   this.pause(function () {
     self.knexDb.transaction(function (trx) {
       return Promise.all(unique(array).map(function (item) {
+
+        if(self._isBuffer(item.key)){
+          item.key = item.key.toString();
+        }
+
         if (item.type === 'del') {
           return trx.where({key: item.key}).from(self.tablename).delete();
         } else {
