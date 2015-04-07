@@ -151,8 +151,8 @@ SQLdown.prototype._get = function (key, options, cb) {
     }
     try {
       var value = JSON.parse(res[0].value);
-      if (asBuffer) {
-        value = new Buffer(value);
+      if (asBuffer && value.type === 'Buffer' && value.data) {
+        value = new Buffer(value.data, 'base64');
       }
       cb(null, value);
     } catch (e) {
@@ -164,6 +164,9 @@ SQLdown.prototype._put = function (key, rawvalue, opt, cb) {
   var self = this;
   if (!this._isBuffer(rawvalue) && process.browser  && typeof rawvalue !== 'object') {
     rawvalue = String(rawvalue);
+  }
+  if (this._isBuffer(rawvalue)) {
+    rawvalue = { type: 'Buffer', data: rawvalue.toString('base64') }
   }
   var value = JSON.stringify(rawvalue);
   self.pause(function () {
