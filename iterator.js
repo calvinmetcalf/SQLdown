@@ -2,6 +2,8 @@
 var inherits = require('inherits');
 var AbstractIterator = require('abstract-leveldown/abstract-iterator');
 var IterStream = require('./iter-stream');
+var util = require('./encode.js');
+
 function goodOptions(opts, name) {
   if (!(name in opts)) {
     return;
@@ -122,16 +124,12 @@ Iterator.prototype._next = function (callback) {
       return callback();
     }
     var key = resp.key;
-    var value = JSON.parse(resp.value);
+    var value = util.decodeValue(resp.value, self._valueAsBuffer);
 
     if (self._keyAsBuffer) {
       key = new Buffer(key);
     }
-    if (self._valueAsBuffer) {
-      value = new Buffer(value);
-    } else if (typeof value !== 'string') {
-      value = String(value);
-    }
+    
     callback(null, key, value);
   });
 };
