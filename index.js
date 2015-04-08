@@ -199,7 +199,6 @@ function unique(array) {
   });
 }
 SQLdown.prototype._batch = function (array, options, callback) {
-  console.log('SQLDOWN - batch - ',array.map(function(i){ return '('+i.type+') '+i.key.toString('base64') + ' -> '+i.value.toString('base64') }))
   var self = this;
   var inserts = 0;
   this.pause(function () {
