@@ -3,11 +3,14 @@ var inherits = require('inherits');
 var knex = require('knex');
 var AbstractLevelDOWN = require('abstract-leveldown').AbstractLevelDOWN;
 var Iter = require('./iterator');
+var util = require('./encode.js');
 var fs = require('fs');
 var Promise = require('bluebird');
 var url = require('url');
 var TABLENAME = 'sqldown';
+
 module.exports = SQLdown;
+
 function parseConnectionString(string) {
   if (process.browser) {
     return {
@@ -134,6 +137,9 @@ SQLdown.prototype._open = function (options, callback) {
 SQLdown.prototype._get = function (key, options, cb) {
   var self = this;
   var asBuffer = true;
+
+  key = util.encodeKey(key)
+
   if (options.asBuffer === false) {
     asBuffer = false;
   }
@@ -149,34 +155,36 @@ SQLdown.prototype._get = function (key, options, cb) {
     if (!res.length) {
       return cb(new Error('NotFound'));
     }
+
     try {
-      var value = JSON.parse(res[0].value);
-      if (asBuffer) {
-        value = new Buffer(value);
-      }
+      var value = util.decodeValue(res[0].value, asBuffer);
       cb(null, value);
     } catch (e) {
       cb(new Error('NotFound'));
     }
   });
 };
-SQLdown.prototype._put = function (key, rawvalue, opt, cb) {
+
+SQLdown.prototype._put = function (key, value, opt, cb) {
   var self = this;
-  if (!this._isBuffer(rawvalue) && process.browser  && typeof rawvalue !== 'object') {
-    rawvalue = String(rawvalue);
-  }
-  var value = JSON.stringify(rawvalue);
+  key = util.encodeKey(key);
+  value = util.encodeValue(value);
+
   self.pause(function () {
     self.knexDb(self.tablename).insert({
       key: key,
-      value:value
+      value: value
     }).then(function () {
       return self.maybeCompact();
     }).nodeify(cb);
   });
 };
+
 SQLdown.prototype._del = function (key, opt, cb) {
   var self = this;
+  
+  key = util.encodeKey(key)
+
   this.pause(function () {
     self.knexDb(self.tablename).where({key: key}).delete().exec(cb);
   });
@@ -184,10 +192,10 @@ SQLdown.prototype._del = function (key, opt, cb) {
 function unique(array) {
   var things = {};
   array.forEach(function (item) {
-    things[item.key] = item;
+    things[util.encodeKey(item.key)] = item;
   });
   return Object.keys(things).map(function (key) {
-    return things[key];
+    return things[util.encodeKey(key)];
   });
 }
 SQLdown.prototype._batch = function (array, options, callback) {
@@ -196,13 +204,17 @@ SQLdown.prototype._batch = function (array, options, callback) {
   this.pause(function () {
     self.knexDb.transaction(function (trx) {
       return Promise.all(unique(array).map(function (item) {
+
+        var key = util.encodeKey(item.key)
+        var value = util.encodeValue(item.value)
+
         if (item.type === 'del') {
-          return trx.where({key: item.key}).from(self.tablename).delete();
+          return trx.where({key: key}).from(self.tablename).delete();
         } else {
           inserts++;
           return trx.insert({
-            key: item.key,
-            value:JSON.stringify(item.value)
+            key: key,
+            value: value
           }).into(self.tablename);
         }
       }));
