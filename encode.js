@@ -1,17 +1,15 @@
-var keyEncoding = 'base64';
-var valueEncoding = 'binary';
+var KEY_ENCODING = 'base64';
+var VALUE_ENCODING = 'binary';
 
 module.exports = {
   encodeKey: encodeKey,
   encodeValue: encodeValue,
   decodeValue: decodeValue,
-  keyEncoding: keyEncoding,
-  valueEncoding: valueEncoding,
 };
 
 function encodeKey(input) {
   if (Buffer.isBuffer(input)) {
-    return input.toString(keyEncoding);
+    return input.toString(KEY_ENCODING);
   } else {
     return input;
   }
@@ -19,7 +17,7 @@ function encodeKey(input) {
 
 function encodeValue(input) {
   if (Buffer.isBuffer(input)) {
-    input = { type: 'Buffer', data: input.toString(valueEncoding, valueEncoding) };
+    input = { type: 'Buffer', data: input.toString(VALUE_ENCODING) };
   } else {
     input = String(input)
   }
@@ -30,7 +28,7 @@ function encodeValue(input) {
 function decodeValue(input, asBuffer) {
   var input = JSON.parse(input);
   if (input && input.type === 'Buffer' && input.data) {
-    input = Buffer(input.data, valueEncoding);
+    input = Buffer(input.data, VALUE_ENCODING);
   } else if (asBuffer) {
     input = Buffer(String(input));
   }
@@ -38,5 +36,5 @@ function decodeValue(input, asBuffer) {
 }
 
 function decodeValueToBuffer(input) {
-  return Buffer(input, valueEncoding);
+  return Buffer(input, VALUE_ENCODING);
 }
