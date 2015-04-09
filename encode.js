@@ -1,4 +1,4 @@
-var keyEncoding = 'utf8';
+var keyEncoding = 'base64';
 var valueEncoding = 'binary';
 
 module.exports = {
