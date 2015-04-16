@@ -24,10 +24,10 @@ function decode(value, asBuffer) {
 if (process.browser) {
   exports.encode = function (value, isValue) {
     var out = encode(value, isValue);
-    return out.toString('hex');
+    return out.toString(isValue ? 'base64' : 'hex');
   };
-  exports.decode = function (value, asBuffer) {
-    return decode(new Buffer(value, 'hex'), asBuffer);
+  exports.decode = function (value, asBuffer, isValue) {
+    return decode(new Buffer(value, isValue ? 'base64' : 'hex'), asBuffer);
   };
 } else {
   exports.encode = encode;

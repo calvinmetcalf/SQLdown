@@ -167,7 +167,7 @@ SQLdown.prototype._get = function (key, options, cb) {
     }
     try {
       var value = res[0].value;
-      cb(null, util.decode(value, asBuffer));
+      cb(null, util.decode(value, asBuffer, true));
     } catch (e) {
       cb(new Error('NotFound'));
     }

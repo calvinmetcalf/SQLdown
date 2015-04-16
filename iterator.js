@@ -126,7 +126,7 @@ Iterator.prototype._next = function (callback) {
       return callback();
     }
     var key = util.decode(resp.key, self._keyAsBuffer);
-    var value = util.decode(resp.value, self._valueAsBuffer);
+    var value = util.decode(resp.value, self._valueAsBuffer, true);
 
     if (!self._keyAsBuffer) {
       key = key.toString();
