@@ -104,7 +104,11 @@ SQLdown.prototype._open = function (options, callback) {
     return self.knexDb.schema.createTable(self.tablename, function (table) {
       table.increments('id').primary();
       if(self.dbType === 'mysql') {
-        table.binary('key');
+        if (typeof options.keySize === 'number') {
+          table.specificType('binary(' + options.keySize + ')', 'key').index();
+        } else {
+          table.binary('key');
+        }
       } else {
         table.binary('key').index();
       }

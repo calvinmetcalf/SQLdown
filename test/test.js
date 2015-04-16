@@ -33,7 +33,7 @@ function test(testCommon) {
             db.open(function (err) {
               t.notOk(err, 'no error')
               t.end();
-            })  
+            })
           })
         })
     });
@@ -48,7 +48,41 @@ function test(testCommon) {
       });
     });
   }
+  function custome2(leveldown, test, testCommon) {
+
+    var db;
+    test('setUp common', testCommon.setUp)
+    test('test keySize', function (t) {
+      db = leveldown(testCommon.location())
+
+      // default createIfMissing=true, errorIfExists=false
+      db.open({keySize: 150}, function (err) {
+          t.notOk(err, 'no error')
+          db.put('foo', 'bar', function (err) {
+            t.notOk(err, 'no error')
+            db.get('foo', {
+              asBuffer: false
+            }, function (err, value) {
+              t.notOk(err, 'no error')
+              t.equals('bar', value);
+              t.end();
+            });
+          });
+        })
+    });
+    test('close up', function (t) {
+      db.close(function (err) {
+        if (err) {
+          process.exit(1);
+        }
+        testCommon.cleanup(function (){
+          t.end();
+        });
+      });
+    });
+  }
   custome(leveljs, tape, testCommon)
+  custome2(leveljs, tape, testCommon)
 }
 if (process.env.DB === 'postgres') {
   test(testCommon('postgres://localhost/sqldown?table=_leveldown_test_db_'));
