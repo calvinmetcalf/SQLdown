@@ -18,7 +18,7 @@ function test(testCommon) {
   require('abstract-leveldown/abstract/iterator-test').all(leveljs, tape, testCommon)
   require('abstract-leveldown/abstract/ranges-test').all(leveljs, tape, testCommon)
 
-  function custome(leveldown, test, testCommon) {
+  function custom(leveldown, test, testCommon) {
 
     var db;
     test('setUp common', testCommon.setUp)
@@ -47,23 +47,20 @@ function test(testCommon) {
         });
       });
     });
-  }
-  function custome2(leveldown, test, testCommon) {
 
-    var db;
     test('setUp common', testCommon.setUp)
     test('test keySize', function (t) {
       db = leveldown(testCommon.location())
 
       // default createIfMissing=true, errorIfExists=false
       db.open({keySize: 150}, function (err) {
-          t.notOk(err, 'no error')
+          t.notOk(err, 'no error in open')
           db.put('foo', 'bar', function (err) {
-            t.notOk(err, 'no error')
+            t.notOk(err, 'no error in put')
             db.get('foo', {
               asBuffer: false
             }, function (err, value) {
-              t.notOk(err, 'no error')
+              t.notOk(err, 'no error in get')
               t.equals('bar', value);
               t.end();
             });
@@ -80,9 +77,38 @@ function test(testCommon) {
         });
       });
     });
+    if (process.env.DB === 'mysql') {
+      test('setUp common', testCommon.setUp)
+      test('test keySize2', function (t) {
+        db = leveldown(testCommon.location())
+
+        // default createIfMissing=true, errorIfExists=false
+        db.open({keySize: 3}, function (err) {
+            t.notOk(err, 'no error in open')
+            db.put('foobar', 'bar', function (err) {
+              t.not(err, 'error in put')
+              db.get('foo', {
+                asBuffer: false
+              }, function (err, value) {
+                t.not(err, 'error in get')
+                t.end();
+              });
+            });
+          })
+      });
+      test('close up', function (t) {
+        db.close(function (err) {
+          if (err) {
+            process.exit(1);
+          }
+          testCommon.cleanup(function (){
+            t.end();
+          });
+        });
+      });
+    }
   }
-  custome(leveljs, tape, testCommon)
-  custome2(leveljs, tape, testCommon)
+  custom(leveljs, tape, testCommon)
 }
 if (process.env.DB === 'postgres') {
   test(testCommon('postgres://localhost/sqldown?table=_leveldown_test_db_'));

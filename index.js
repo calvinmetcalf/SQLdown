@@ -105,7 +105,7 @@ SQLdown.prototype._open = function (options, callback) {
       table.increments('id').primary();
       if(self.dbType === 'mysql') {
         if (typeof options.keySize === 'number') {
-          table.specificType('key', 'binary(' + options.keySize + ')').index();
+          table.specificType('key', 'varbinary(' + options.keySize + ')').index();
         } else {
           table.binary('key');
         }
