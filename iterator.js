@@ -14,9 +14,13 @@ function goodOptions(opts, name) {
   if (Buffer.isBuffer(thing) || typeof thing === 'string') {
     if (!thing.length) {
       delete opts[name];
+      return;
+    }
+    if (!Buffer.isBuffer(thing)) {
+      opts[name] = new Buffer(thing);
     }
   }
-  
+
 }
 inherits(Iterator, AbstractIterator);
 module.exports = Iterator;
@@ -122,15 +126,13 @@ Iterator.prototype._next = function (callback) {
       return callback();
     }
     var key = resp.key;
-    var value = JSON.parse(resp.value);
+    var value = resp.value || new Buffer('');
 
-    if (self._keyAsBuffer) {
-      key = new Buffer(key);
+    if (!self._keyAsBuffer) {
+      key = key.toString();
     }
-    if (self._valueAsBuffer) {
-      value = new Buffer(value);
-    } else if (typeof value !== 'string') {
-      value = String(value);
+    if (!self._valueAsBuffer) {
+      value = value.toString();
     }
     callback(null, key, value);
   });

@@ -103,19 +103,14 @@ SQLdown.prototype._open = function (options, callback) {
   function createTable() {
     return self.knexDb.schema.createTable(self.tablename, function (table) {
       table.increments('id').primary();
-      if (options.keySize){
-        table.string('key', options.keySize).index();
-      } else if(self.dbType === 'mysql') {
-        table.text('key');  
+      if(self.dbType === 'mysql') {
+        table.binary('key');
       } else {
-        table.text('key').index();
+        table.binary('key').index();
       }
-        
-      if (options.valueSize){
-        table.string('value', options.valueSize);
-      } else {
-        table.text('value');  
-      }
+
+      table.binary('value');
+
     });
   }
   if (process.browser){
@@ -140,8 +135,11 @@ SQLdown.prototype._get = function (key, options, cb) {
   if (options.raw) {
     asBuffer = false;
   }
+  if (!this._isBuffer(key)) {
+    key = new Buffer(key);
+  }
   this.knexDb.select('value').from(this.tablename).whereIn('id', function (){
-    this.max('id').from(self.tablename).where({key:key});
+    this.max('id').from(self.tablename).where({ key: key});
   }).exec(function (err, res) {
     if (err) {
       return cb(err.stack);
@@ -150,9 +148,9 @@ SQLdown.prototype._get = function (key, options, cb) {
       return cb(new Error('NotFound'));
     }
     try {
-      var value = JSON.parse(res[0].value);
-      if (asBuffer) {
-        value = new Buffer(value);
+      var value = res[0].value;
+      if (!asBuffer) {
+        value = value.toString();
       }
       cb(null, value);
     } catch (e) {
@@ -160,16 +158,22 @@ SQLdown.prototype._get = function (key, options, cb) {
     }
   });
 };
-SQLdown.prototype._put = function (key, rawvalue, opt, cb) {
+SQLdown.prototype._put = function (key, value, opt, cb) {
   var self = this;
-  if (!this._isBuffer(rawvalue) && process.browser  && typeof rawvalue !== 'object') {
-    rawvalue = String(rawvalue);
+  if (!this._isBuffer(value) && typeof rawvalue !== 'object') {
+    value = String(value);
   }
-  var value = JSON.stringify(rawvalue);
+  if (!this._isBuffer(key)) {
+    key = new Buffer(key);
+  }
+  if (!this._isBuffer(value)) {
+    value = new Buffer(value || '');
+  }
+
   self.pause(function () {
     self.knexDb(self.tablename).insert({
       key: key,
-      value:value
+      value: value
     }).then(function () {
       return self.maybeCompact();
     }).nodeify(cb);
@@ -177,6 +181,9 @@ SQLdown.prototype._put = function (key, rawvalue, opt, cb) {
 };
 SQLdown.prototype._del = function (key, opt, cb) {
   var self = this;
+  if (!this._isBuffer(key)) {
+    key = new Buffer(key);
+  }
   this.pause(function () {
     self.knexDb(self.tablename).where({key: key}).delete().exec(cb);
   });
@@ -196,13 +203,24 @@ SQLdown.prototype._batch = function (array, options, callback) {
   this.pause(function () {
     self.knexDb.transaction(function (trx) {
       return Promise.all(unique(array).map(function (item) {
+        var key = item.key;
+        if (!self._isBuffer(key)) {
+          key = new Buffer(key);
+        }
         if (item.type === 'del') {
-          return trx.where({key: item.key}).from(self.tablename).delete();
+          return trx.where({key: key}).from(self.tablename).delete();
         } else {
+          var value = item.value || new Buffer('');
+          if (!self._isBuffer(value) && typeof rawvalue !== 'object') {
+            value = String(value);
+          }
+          if (!self._isBuffer(value)) {
+            value = new Buffer(value);
+          }
           inserts++;
           return trx.insert({
-            key: item.key,
-            value:JSON.stringify(item.value)
+            key: key,
+            value: value
           }).into(self.tablename);
         }
       }));
@@ -213,7 +231,7 @@ SQLdown.prototype._batch = function (array, options, callback) {
 };
 SQLdown.prototype.compact = function () {
   var self = this;
-  return this.knexDb(this.tablename).select('key','value').not.whereIn('id', function () {
+  return this.knexDb(this.tablename).select('key', 'value').not.whereIn('id', function () {
     this.select('id').from(function () {
       this.select(self.knexDb.raw('max(id) as id')).from(self.tablename).groupBy('key').as('__tmp__table');
     });
