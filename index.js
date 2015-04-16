@@ -18,7 +18,7 @@ function parseConnectionString(string) {
   var protocol = parsed.protocol;
   if(protocol === null) {
     return {
-      client:'sqlite3',
+      client: 'sqlite3',
       connection: {
         filename: string
       }
@@ -112,8 +112,11 @@ SQLdown.prototype._open = function (options, callback) {
       } else {
         table.binary('key').index();
       }
-
-      table.binary('value');
+      if(self.dbType === 'mysql' && typeof options.valueSize === 'number') {
+        table.specificType('value', 'varbinary(' + options.valueSize + ')');
+      } else {
+        table.binary('value');
+      }
 
     });
   }

@@ -1,3 +1,4 @@
+'use strict';
 var tape   = require('tape')
 var leveljs = require('../')
 var testCommon = require('./testCommon')
@@ -53,7 +54,10 @@ function test(testCommon) {
       db = leveldown(testCommon.location())
 
       // default createIfMissing=true, errorIfExists=false
-      db.open({keySize: 150}, function (err) {
+      db.open({
+        keySize: 150,
+        valueSize: 150
+      }, function (err) {
           t.notOk(err, 'no error in open')
           db.put('foo', 'bar', function (err) {
             t.notOk(err, 'no error in put')
@@ -89,7 +93,35 @@ function test(testCommon) {
               t.not(err, 'error in put')
               db.get('foo', {
                 asBuffer: false
-              }, function (err, value) {
+              }, function (err) {
+                t.not(err, 'error in get')
+                t.end();
+              });
+            });
+          })
+      });
+      test('close up', function (t) {
+        db.close(function (err) {
+          if (err) {
+            process.exit(1);
+          }
+          testCommon.cleanup(function (){
+            t.end();
+          });
+        });
+      });
+      test('setUp common', testCommon.setUp)
+      test('test valuesize', function (t) {
+        db = leveldown(testCommon.location())
+
+        // default createIfMissing=true, errorIfExists=false
+        db.open({valueSize: 3}, function (err) {
+            t.notOk(err, 'no error in open')
+            db.put('foo', 'barvar', function (err) {
+              t.not(err, 'error in put')
+              db.get('foo', {
+                asBuffer: false
+              }, function (err) {
                 t.not(err, 'error in get')
                 t.end();
               });
