@@ -7,6 +7,7 @@ var fs = require('fs');
 var Promise = require('bluebird');
 var url = require('url');
 var TABLENAME = 'sqldown';
+var util = require('./encoding');
 module.exports = SQLdown;
 function parseConnectionString(string) {
   if (process.browser) {
@@ -103,7 +104,13 @@ SQLdown.prototype._open = function (options, callback) {
   function createTable() {
     return self.knexDb.schema.createTable(self.tablename, function (table) {
       table.increments('id').primary();
-      if(self.dbType === 'mysql') {
+      if (process.browser) {
+        if (typeof options.keySize === 'number') {
+          table.string('key', options.keySize).index();
+        } else {
+          table.text('key').index();
+        }
+      } else if(self.dbType === 'mysql') {
         if (typeof options.keySize === 'number') {
           table.specificType('key', 'varbinary(' + options.keySize + ')').index();
         } else {
@@ -112,7 +119,13 @@ SQLdown.prototype._open = function (options, callback) {
       } else {
         table.binary('key').index();
       }
-      if(self.dbType === 'mysql' && typeof options.valueSize === 'number') {
+      if (process.browser) {
+        if (typeof options.valueSize === 'number') {
+          table.string('value', options.valueSize);
+        } else {
+          table.text('value');
+        }
+      } else if(self.dbType === 'mysql' && typeof options.valueSize === 'number') {
         table.specificType('value', 'varbinary(' + options.valueSize + ')');
       } else {
         table.binary('value');
@@ -142,9 +155,7 @@ SQLdown.prototype._get = function (key, options, cb) {
   if (options.raw) {
     asBuffer = false;
   }
-  if (!this._isBuffer(key)) {
-    key = new Buffer(key);
-  }
+  key = util.encode(key);
   this.knexDb.select('value').from(this.tablename).whereIn('id', function (){
     this.max('id').from(self.tablename).where({ key: key});
   }).exec(function (err, res) {
@@ -156,10 +167,7 @@ SQLdown.prototype._get = function (key, options, cb) {
     }
     try {
       var value = res[0].value;
-      if (!asBuffer) {
-        value = value.toString();
-      }
-      cb(null, value);
+      cb(null, util.decode(value, asBuffer));
     } catch (e) {
       cb(new Error('NotFound'));
     }
@@ -167,15 +175,8 @@ SQLdown.prototype._get = function (key, options, cb) {
 };
 SQLdown.prototype._put = function (key, value, opt, cb) {
   var self = this;
-  if (!this._isBuffer(value) && typeof rawvalue !== 'object') {
-    value = String(value);
-  }
-  if (!this._isBuffer(key)) {
-    key = new Buffer(key);
-  }
-  if (!this._isBuffer(value)) {
-    value = new Buffer(value || '');
-  }
+  value = util.encode(value, true);
+  key = util.encode(key);
 
   self.pause(function () {
     self.knexDb(self.tablename).insert({
@@ -188,9 +189,7 @@ SQLdown.prototype._put = function (key, value, opt, cb) {
 };
 SQLdown.prototype._del = function (key, opt, cb) {
   var self = this;
-  if (!this._isBuffer(key)) {
-    key = new Buffer(key);
-  }
+  key = util.encode(key);
   this.pause(function () {
     self.knexDb(self.tablename).where({key: key}).delete().exec(cb);
   });
@@ -210,20 +209,12 @@ SQLdown.prototype._batch = function (array, options, callback) {
   this.pause(function () {
     self.knexDb.transaction(function (trx) {
       return Promise.all(unique(array).map(function (item) {
-        var key = item.key;
-        if (!self._isBuffer(key)) {
-          key = new Buffer(key);
-        }
+        var key = util.encode(item.key);
+
         if (item.type === 'del') {
           return trx.where({key: key}).from(self.tablename).delete();
         } else {
-          var value = item.value || new Buffer('');
-          if (!self._isBuffer(value) && typeof rawvalue !== 'object') {
-            value = String(value);
-          }
-          if (!self._isBuffer(value)) {
-            value = new Buffer(value);
-          }
+          var value = util.encode(item.value, true);
           inserts++;
           return trx.insert({
             key: key,

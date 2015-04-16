@@ -2,6 +2,7 @@
 var inherits = require('inherits');
 var AbstractIterator = require('abstract-leveldown/abstract-iterator');
 var IterStream = require('./iter-stream');
+var util = require('./encoding');
 function goodOptions(opts, name) {
   if (!(name in opts)) {
     return;
@@ -16,9 +17,8 @@ function goodOptions(opts, name) {
       delete opts[name];
       return;
     }
-    if (!Buffer.isBuffer(thing)) {
-      opts[name] = new Buffer(thing);
-    }
+
+    opts[name] = util.encode(thing);
   }
 
 }
@@ -122,11 +122,11 @@ Iterator.prototype._next = function (callback) {
     }
   }
   this._sql.next(function (err, resp) {
-    if (err || !resp) {
+    if (err || !resp || !resp.value) {
       return callback();
     }
-    var key = resp.key;
-    var value = resp.value || new Buffer('');
+    var key = util.decode(resp.key, self._keyAsBuffer);
+    var value = util.decode(resp.value, self._valueAsBuffer);
 
     if (!self._keyAsBuffer) {
       key = key.toString();
