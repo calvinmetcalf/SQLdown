@@ -20,3 +20,4 @@ results
 
 npm-debug.log
 temp.js
+test/test-bundle.js

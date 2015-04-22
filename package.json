@@ -16,7 +16,7 @@
   "main": "./index.js",
   "scripts": {
     "test": "node ./test/test.js -p | tspec",
-    "browser": "prova ./test/test.js -l chrome -bq"
+    "browser": "browserify ./test/testBrowser.js > test/test-bundle.js"
   },
   "license": "MIT",
   "browser": {
@@ -41,8 +41,8 @@
     "mysql": "^2.5.3",
     "pg": "^4.1.1",
     "pg-query-stream": "^0.7.0",
-    "prova": "^2.1.1",
     "sqlite3": "^3.0.4",
+    "tap-browser-color": "^0.1.2",
     "tap-spec": "^2.1.1",
     "tape": "^3.0.3"
   }
