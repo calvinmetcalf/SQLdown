@@ -1,2 +1,2 @@
-var undo = require('tap-browser-color')();
+require('tap-browser-el')();
 require('./test');
