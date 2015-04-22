@@ -89,7 +89,7 @@ SQLdown.destroy = function (location, options, callback) {
   var db = knex(conn);
   db.schema.dropTableIfExists(getTableName(location, options)).then(function () {
     return db.destroy();
-  }).exec(callback);
+  }).asCallback(callback);
 };
 
 
@@ -158,7 +158,7 @@ SQLdown.prototype._get = function (key, options, cb) {
   key = util.encode(key);
   this.knexDb.select('value').from(this.tablename).whereIn('id', function (){
     this.max('id').from(self.tablename).where({ key: key});
-  }).exec(function (err, res) {
+  }).asCallback(function (err, res) {
     if (err) {
       return cb(err.stack);
     }
@@ -191,7 +191,7 @@ SQLdown.prototype._del = function (key, opt, cb) {
   var self = this;
   key = util.encode(key);
   this.pause(function () {
-    self.knexDb(self.tablename).where({key: key}).delete().exec(cb);
+    self.knexDb(self.tablename).where({key: key}).delete().asCallback(cb);
   });
 };
 function unique(array) {
@@ -224,7 +224,7 @@ SQLdown.prototype._batch = function (array, options, callback) {
       }));
     }).then(function () {
       return self.maybeCompact(inserts);
-    }).nodeify(callback);
+    }).asCallback(callback);
   });
 };
 SQLdown.prototype.compact = function () {
@@ -254,7 +254,7 @@ SQLdown.prototype.maybeCompact = function (inserts) {
 SQLdown.prototype._close = function (callback) {
   var self = this;
   process.nextTick(function () {
-    self.knexDb.destroy().exec(callback);
+    self.knexDb.destroy().asCallback(callback);
   });
 };
 SQLdown.prototype.pause = function (cb) {

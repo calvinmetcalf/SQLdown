@@ -20,8 +20,7 @@
   },
   "license": "MIT",
   "browser": {
-    "fs": false,
-    "tape": "prova"
+    "fs": false
   },
   "browserify": {
     "transform": [
@@ -34,7 +33,7 @@
     "double-ended-queue": "^2.0.0-0",
     "es3ify": "^0.1.3",
     "inherits": "^2.0.1",
-    "knex": "^0.7.3",
+    "knex": "tgriesser/knex#pool",
     "through2": "^0.6.3"
   },
   "devDependencies": {
