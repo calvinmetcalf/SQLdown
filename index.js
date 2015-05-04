@@ -112,7 +112,7 @@ SQLdown.prototype._open = function (options, callback) {
         }
       } else if(self.dbType === 'mysql') {
         if (typeof options.keySize === 'number') {
-          table.specificType('key', 'varbinary(' + options.keySize + ')').index();
+          table.binary('key', options.keySize).index();
         } else {
           table.binary('key');
         }
@@ -126,7 +126,7 @@ SQLdown.prototype._open = function (options, callback) {
           table.text('value');
         }
       } else if(self.dbType === 'mysql' && typeof options.valueSize === 'number') {
-        table.specificType('value', 'varbinary(' + options.valueSize + ')');
+        table.binary('value', options.valueSize);
       } else {
         table.binary('value');
       }
