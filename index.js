@@ -258,7 +258,7 @@ SQLdown.prototype._close = function (callback) {
   });
 };
 SQLdown.prototype.pause = function (cb) {
-  if (!this._paused) {
+  if (true) {
     cb();
   } else {
     this.knexDb.once('unpaused', cb);

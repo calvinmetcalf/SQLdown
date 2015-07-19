@@ -37,7 +37,7 @@
     "through2": "^0.6.3"
   },
   "devDependencies": {
-    "browserify": "^7.0.1",
+    "browserify": "^11.0.0",
     "mysql": "^2.5.3",
     "pg": "^4.1.1",
     "pg-query-stream": "^0.7.0",
