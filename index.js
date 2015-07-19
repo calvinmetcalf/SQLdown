@@ -258,7 +258,7 @@ SQLdown.prototype._close = function (callback) {
   });
 };
 SQLdown.prototype.pause = function (cb) {
-  if (this.dbType === 'mysql' && !this._paused) {
+  if (this.dbType !== 'mysql' || !this._paused) {
     cb();
   } else {
     this.knexDb.once('unpaused', cb);
