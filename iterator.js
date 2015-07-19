@@ -92,13 +92,7 @@ function Iterator(db, options, cb) {
     this.__value = 'in progress';
   }
 }
-// Iterator.prototype._end = function (callback) {
-//   if (typeof this.___cb === 'function') {
-//     this.___cb();
-//     this.___cb = null;
-//   }
-//   callback();
-// };
+
 Iterator.prototype._next = function (callback) {
   var self = this;
   if (self._ended) {
