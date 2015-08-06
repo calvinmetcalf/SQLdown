@@ -153,7 +153,7 @@ Iterator.prototype._next = function (callback) {
 Iterator.prototype.buildSQL = function (maxKey) {
   debug(maxKey);
   var self = this;
-  var outersql = this._db.select('key', 'value').from(this.db.tablename);
+  var outersql = this._db.select('key', 'value').from(this.db.tablename).whereNotNull('value');
   var innerSQL = this._db.max('id').from(self.db.tablename).groupBy('key');
   if (typeof maxKey !== 'undefined') {
     innerSQL.where('id', '<=', maxKey);
@@ -211,10 +211,9 @@ Iterator.prototype.buildSQL = function (maxKey) {
   return outersql;
 };
 Iterator.prototype.getCurrentId = function () {
-  return this._db.max('id').from(this.db.tablename).then(function (resp) {
+  return this._db.select(this._db.raw('max(id) as id')).from(this.db.tablename).then(function (resp) {
     debug('get id');
     debug(resp);
-    var key = Object.keys(resp[0])[0];
-    return resp[0][key];
+    return resp[0].id;
   });
 };

@@ -12,7 +12,7 @@ before_script:
 
 env:
   - COMMAND=test
-  - DEBUG="sqldown:*" DB=mysql COMMAND=test
+  - DB=mysql COMMAND=test
   - DB=postgres COMMAND=test
 
 script: npm run $COMMAND

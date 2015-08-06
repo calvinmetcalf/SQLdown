@@ -169,6 +169,9 @@ SQLdown.prototype._get = function (key, options, cb) {
     }
     try {
       var value = res[0].value;
+      if (value === undefined || value === null) {
+        return cb(new Error('NotFound'));
+      }
       cb(null, util.decode(value, asBuffer, true));
     } catch (e) {
       cb(new Error('NotFound'));
@@ -195,7 +198,9 @@ SQLdown.prototype._del = function (key, opt, cb) {
   debug('before del pause');
   this.pause(function () {
     debug('after del pause');
-    self.knexDb(self.tablename).where({key: key}).delete().asCallback(cb);
+    self.knexDb(self.tablename).insert({key: key}).then(function () {
+      return self.maybeCompact();
+    }).nodeify(cb);
   });
 };
 function unique(array) {
@@ -216,7 +221,9 @@ SQLdown.prototype._batch = function (array, options, callback) {
         var key = util.encode(item.key);
 
         if (item.type === 'del') {
-          return trx.where({key: key}).from(self.tablename).delete();
+          return trx.insert({
+            key: key
+          }).into(self.tablename);
         } else {
           var value = util.encode(item.value, true);
           inserts++;
