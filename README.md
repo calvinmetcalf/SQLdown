@@ -7,7 +7,7 @@ A levelup backend with knex (sqlite3, postgres, and mysql tested and websql poss
 npm install --save sqldown
 ```
 
-Also it doens't come with any of the database backends so you need to install those yourself, one of
+Also it doesn't come with any of the database backends so you need to install those yourself, one of
 
 ```bash
 npm install --save sqlite3
