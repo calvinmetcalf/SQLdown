@@ -74,7 +74,8 @@ function SQLdown(location) {
   }
   AbstractLevelDOWN.call(this, location);
   this.knexDb = this.counter = this.dbType = this.compactFreq = this.tablename = void 0;
-  this._paused = false;
+  this._paused = 0;
+  this._compactable = true;
 }
 SQLdown.destroy = function (location, options, callback) {
   if (typeof options === 'function') {
@@ -237,6 +238,9 @@ SQLdown.prototype.compact = function () {
 };
 
 SQLdown.prototype.maybeCompact = function (inserts) {
+  if (!this._compactable) {
+    return Promise.resolve();
+  }
   if (inserts + this.counter > this.compactFreq) {
     this.counter += inserts;
     this.counter %= this.compactFreq;
@@ -258,7 +262,7 @@ SQLdown.prototype._close = function (callback) {
   });
 };
 SQLdown.prototype.pause = function (cb) {
-  if (!this._paused) {
+  if (!this._paused || this.dbType !== 'mysql') {
     cb();
   } else {
     this.knexDb.once('unpaused', cb);
@@ -266,9 +270,12 @@ SQLdown.prototype.pause = function (cb) {
 };
 SQLdown.prototype.iterator = function (options) {
   var self = this;
-  this._paused = true;
+  if (this.dbType === 'mysql') {
+    this._paused++;
+  }
+  this._compactable = false;
   return new Iter(this, options, function () {
-    self._paused = false;
-    self.knexDb.emit('unpaused');
+    self._compactable = true;
+    self.maybeCompact();
   });
 };
