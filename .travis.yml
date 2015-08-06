@@ -2,7 +2,6 @@ language: node_js
 
 node_js:
   - "0.12"
-  - "iojs"
 
 before_script:
   - sh -c "if [ '$DB' = 'postgres' ]; then psql -c 'DROP DATABASE IF EXISTS sqldown;' -U postgres; fi"
