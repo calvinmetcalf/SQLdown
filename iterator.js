@@ -3,6 +3,8 @@ var inherits = require('inherits');
 var AbstractIterator = require('abstract-leveldown/abstract-iterator');
 var IterStream = require('./iter-stream');
 var util = require('./encoding');
+var debug = require('debug')('sqldown:iterator');
+
 function goodOptions(opts, name) {
   if (!(name in opts)) {
     return;
@@ -205,6 +207,8 @@ Iterator.prototype.buildSQL = function (maxKey) {
 };
 Iterator.prototype.getCurrentId = function () {
   return this._db.max('id').from(this.db.tablename).then(function (resp) {
+    debug('get id');
+    debug(resp);
     return resp[0].id;
   });
 };

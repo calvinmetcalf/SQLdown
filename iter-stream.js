@@ -3,6 +3,8 @@ var Queue = require('double-ended-queue');
 var through = require('through2').obj;
 var EE = require('events').EventEmitter;
 var inherits = require('inherits');
+var debug = require('debug')('sqldown:iter-stream');
+
 module.exports = IterStream;
 inherits(IterStream, EE);
 function IterStream(_stream, db) {
@@ -39,13 +41,17 @@ function IterStream(_stream, db) {
       var stream = query[0].stream();
       self.stream = stream;
       db._paused--;
+      debug(db._paused);
       if (!db._paused) {
+        debug('unpause');
         db.knexDb.emit('unpaused');
       }
       stream.pipe(outStream);
     }).catch(function (e) {
       db._paused--;
+      debug(db._paused);
       if (!db._paused) {
+        debug('unpause');
         db.knexDb.emit('unpaused');
       }
       self.queue.shift(e);

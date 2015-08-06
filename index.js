@@ -8,6 +8,7 @@ var Promise = require('bluebird');
 var url = require('url');
 var TABLENAME = 'sqldown';
 var util = require('./encoding');
+var debug = require('debug')('sqldown:main');
 module.exports = SQLdown;
 function parseConnectionString(string) {
   if (process.browser) {
@@ -191,7 +192,9 @@ SQLdown.prototype._put = function (key, value, opt, cb) {
 SQLdown.prototype._del = function (key, opt, cb) {
   var self = this;
   key = util.encode(key);
+  debug('before del pause');
   this.pause(function () {
+    debug('after del pause');
     self.knexDb(self.tablename).where({key: key}).delete().asCallback(cb);
   });
 };
@@ -271,6 +274,7 @@ SQLdown.prototype.pause = function (cb) {
 SQLdown.prototype.iterator = function (options) {
   var self = this;
   if (this.dbType === 'mysql') {
+    debug('pausing iterator');
     this._paused++;
   }
   this._compactable = false;
