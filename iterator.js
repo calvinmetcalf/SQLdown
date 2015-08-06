@@ -104,6 +104,7 @@ function Iterator(db, options, cb) {
 }
 
 Iterator.prototype._next = function (callback) {
+  debug('_nexting');
   var self = this;
   if (self._ended) {
     if (typeof this.___cb === 'function') {
@@ -112,6 +113,7 @@ Iterator.prototype._next = function (callback) {
     }
     return callback();
   }
+  debug(this.__value);
   if (this.__value !== null) {
     if (this.__value === 'in progress') {
       this.__cb = callback;
@@ -131,6 +133,7 @@ Iterator.prototype._next = function (callback) {
     }
   }
   this._sql.next(function (err, resp) {
+    debug(err, resp);
     if (err || !resp || !resp.value) {
       return callback();
     }
