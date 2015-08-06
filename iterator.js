@@ -60,16 +60,24 @@ function Iterator(db, options, cb) {
     this._valueAsBuffer = true;
   }
 
-  this._sql = this.buildSQL();
-  if (this._limit > 0) {
-    this._sql.limit(this._limit);
+  var makeSql;
+  if (db.dbType === 'mysql') {
+    makeSql = this.getCurrentId().then(function (key) {
+      return [self.buildSQL(key)];
+    });
+  } else {
+    makeSql = this.buildSQL();
   }
   if (this._limit === 0) {
     this._next = function (cb) {
       process.nextTick(cb);
     };
   } else {
-    this._sql = new IterStream(this._sql.stream());
+    if (db.dbType === 'mysql') {
+      this._sql = new IterStream(makeSql, this.db);
+    } else {
+      this._sql = new IterStream(makeSql);
+    }
     this.__value = null;
     this.__cb = null;
     this.___cb = cb;
@@ -136,11 +144,14 @@ Iterator.prototype._next = function (callback) {
   });
 };
 
-Iterator.prototype.buildSQL = function () {
+Iterator.prototype.buildSQL = function (maxKey) {
   var self = this;
   var outersql = this._db.select('key', 'value').from(this.db.tablename);
   var innerSQL = this._db.max('id').from(self.db.tablename).groupBy('key');
-  if (this._order)  {
+  if (maxKey) {
+    innerSQL.where('id', '<=', maxKey);
+  }
+  if (this._order) {
     outersql.orderBy('key');
     if ('start' in this._options) {
       if (this._options.exclusiveStart) {
@@ -175,16 +186,25 @@ Iterator.prototype.buildSQL = function () {
   }
 
   if ('lt' in this._options) {
-    innerSQL.where('key','<', this._options.lt);
+    innerSQL.where('key', '<', this._options.lt);
   }
   if ('lte' in this._options) {
-    innerSQL.where('key','<=', this._options.lte);
+    innerSQL.where('key', '<=', this._options.lte);
   }
   if ('gt' in this._options) {
-    innerSQL.where('key','>', this._options.gt);
+    innerSQL.where('key', '>', this._options.gt);
   }
   if ('gte' in this._options) {
-    innerSQL.where('key','>=', this._options.gte);
+    innerSQL.where('key', '>=', this._options.gte);
   }
-  return outersql.whereIn('id', innerSQL);
+  outersql.whereIn('id', innerSQL);
+  if (this._limit > 0) {
+    outersql.limit(this._limit);
+  }
+  return outersql;
+};
+Iterator.prototype.getCurrentId = function () {
+  return this._db.max('id').from(this.db.tablename).then(function (resp) {
+    return resp[0].id;
+  });
 };
