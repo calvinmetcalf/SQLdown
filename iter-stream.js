@@ -16,6 +16,7 @@ function IterStream(_stream, db) {
   this.stream = null;
   this.queue = new Queue();
   var outStream = through(function (chunk, _, next) {
+    debug('transform');
     if (self.queue.isEmpty()) {
       self.once('callback', function () {
         self.queue.shift()(null, chunk);
@@ -26,6 +27,7 @@ function IterStream(_stream, db) {
       next();
     }
   }, function (next) {
+    debug('flush');
     while(!self.queue.isEmpty()) {
       self.queue.shift()(new Error('ended'));
     }

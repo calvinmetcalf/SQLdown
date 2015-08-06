@@ -213,6 +213,7 @@ Iterator.prototype.getCurrentId = function () {
   return this._db.max('id').from(this.db.tablename).then(function (resp) {
     debug('get id');
     debug(resp);
-    return resp[0].id;
+    var key = Object.keys(resp[0])[0];
+    return resp[0][key];
   });
 };
