@@ -51,10 +51,16 @@ function IterStream(_stream, db) {
       db._paused--;
       debug(db._paused);
       if (!db._paused) {
-        debug('unpause');
+        debug('unpause after error');
         db.knexDb.emit('unpaused');
       }
-      self.queue.shift(e);
+      if (self.queue.isEmpty()) {
+        self.once('callback', function () {
+          self.queue.shift()(e);
+        });
+      } else {
+        self.queue.shift()(e);
+      }
     });
   } else {
     this.stream = _stream.stream();
