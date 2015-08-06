@@ -125,6 +125,7 @@ Iterator.prototype._next = function (callback) {
         })) {
           return callback();
         }
+        debug(value);
         callback(value[0], value[1], value[2]);
       });
     }
