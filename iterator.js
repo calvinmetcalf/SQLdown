@@ -151,10 +151,11 @@ Iterator.prototype._next = function (callback) {
 };
 
 Iterator.prototype.buildSQL = function (maxKey) {
+  debug(maxKey);
   var self = this;
   var outersql = this._db.select('key', 'value').from(this.db.tablename);
   var innerSQL = this._db.max('id').from(self.db.tablename).groupBy('key');
-  if (maxKey) {
+  if (typeof maxKey !== 'undefined') {
     innerSQL.where('id', '<=', maxKey);
   }
   if (this._order) {
